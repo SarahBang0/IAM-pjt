@@ -213,6 +213,28 @@
             .map-container.shifted .map-wrapper { transform: translateX(0); }
             .side-panel { width: 100%; right: -100%; }
         }
+
+        .typewriter {
+            display: inline-block;
+            overflow: hidden; /* 글자가 넘치면 숨김 */
+            border-right: 2px solid #57534e; /* 커서 모양 */
+            white-space: nowrap; /* 글자가 줄바꿈되지 않게 함 */
+            animation: 
+                typing 3s steps(20, end),
+                blink-caret 0.75s step-end infinite;
+        }
+        .reveal-text {
+            opacity: 0;
+            letter-spacing: -0.1em; /* 시작할 땐 글자가 좁게 */
+            animation: reveal 2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes reveal {
+            to {
+                opacity: 1;
+                letter-spacing: 0.15em; /* 끝날 땐 우아하게 간격이 넓어짐 */
+            }
+        }
     </style>
 </head>
 
@@ -226,7 +248,7 @@
         </button>
 
         <div class="text-center">
-            <h1 class="text-3xl md:text-4xl font-bold tracking-[0.15em] text-stone-800 dark:text-stone-100 transition-colors">TRAVEL ARCHIVE</h1>
+            <h1 class="text-3xl reveal-text md:text-4xl font-bold tracking-[0.15em] text-stone-800 dark:text-stone-100 transition-colors">TRAVEL ARCHIVE</h1>
             <p class="text-sm font-sans tracking-[0.3em] text-stone-500 dark:text-stone-400 mt-2 transition-colors">WESTERN & CENTRAL EUROPE</p>
             
             <div class="mt-6 mx-auto max-w-lg hidden md:block">
@@ -450,7 +472,7 @@ const cityData = {
         meta: "🌊 Gaudí's Canvas | #Art #Sea",
         img: "https://d3dqioy2sca31t.cloudfront.net/Projects/cms/production/000/020/484/article/d0531471711b367b94abfd4dbc29e6ae/spain-barcelona-sagrada-familia-080416-az.jpg",
         food: [
-            { name: "Seafood Paella", desc: "신선한 지중해 해산물과 사프란의 향긋함이 쌀알에 깊게 배어든 스페인 대표 요리.", img: "https://themediterraneanchick.com/wp-content/uploads/2020/09/IMG_0825-1-scaled.jpg" },
+            { name: "Seafood Paella (해산물 빠에야)", desc: "신선한 지중해 해산물과 사프란의 향긋함이 쌀알에 깊게 배어든 스페인 대표 요리.", img: "https://themediterraneanchick.com/wp-content/uploads/2020/09/IMG_0825-1-scaled.jpg" },
             { name: "Pan con Tomate", desc: "구운 빵에 생마늘과 완숙 토마토를 문질러 바르고 올리브 오일을 뿌려 먹는 카탈루냐 전통 타파스.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtzvwphUjoAr_Em4ACOkYEGyHZFbPuDsjYOnGrChjImO2-NuDQ2ygRF6sH&s=10" }
         ],
         places: [
@@ -506,7 +528,7 @@ const cityData = {
         meta: "🗼 City of Light | #Romance",
         img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/blt652fe43425222b58/676451b8ccead143f23f2e91/iStock-847408280-Header_Mobile.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif",
         food: [
-            { name: "Steak Tartare", desc: "신선한 생소고기를 잘게 다져 계란 노른자, 허브, 각종 양념(다진 양파, 케이퍼, 머스터드 등)과 함께 버무려 먹는 프랑스식 전통 소고기 육회 요리", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0KamUtxoXQ8GkpvtLe0w0nIXJIh65yMj5cur5Yo5Q5_mM4tNYeRT4YOA&s=10" },
+            { name: "Steak Tartare (육회 타르타르)", desc: "신선한 생소고기를 잘게 다져 계란 노른자, 허브, 각종 양념(다진 양파, 케이퍼, 머스터드 등)과 함께 버무려 먹는 프랑스식 전통 소고기 육회 요리", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0KamUtxoXQ8GkpvtLe0w0nIXJIh65yMj5cur5Yo5Q5_mM4tNYeRT4YOA&s=10" },
            ],
         places: [
             { name: "Montmartre (몽마르트르)", desc: "프랑스 파리 북부에 위치한 언덕으로, 아름다운 사크레쾨르 대성당과 골목길이 자아내는 낭만적인 분위기 속에서 고흐, 피카소 등 수많은 예술가들의 흔적을 느낄 수 있는 대표적인 예술가 거리", img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/blted2fd26b0f7f6b89/682233917a31967c0d3e5b25/arnaud-mariat-49DEzojVZ0U-unsplash-HEADER-MOBILE.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif" },
@@ -514,14 +536,14 @@ const cityData = {
             { name: "Palace of Versailles (베르사유 궁전)", desc: "태양왕 루이 14세의 절대 권력을 상징하는 화려함의 극치인 거대 거울의 방과 완벽한 대칭의 정원.", img: "https://www.agoda.com/wp-content/uploads/2019/03/Palace-of-Versailles_Paris_France_gardens.jpg" },
             { name: "Disneyland Paris (디즈니랜드 파리)", desc: "잠자는 숲속의 공주 성을 중심으로 마법 같은 동화 속 세계를 체험할 수 있는 유럽 유일의 디즈니 파크.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlBOFoO1yAmBKuDYp0QsxbDp4j4h7Uflfijp_fzvUMrc9_gGQWWkIsr0A&s=10" }
         ],
-        music: { title: "Le Festin", artist: "Camille, Michael Giacchino", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNHLoD4d0BP8qPicmf5IATvkZVnqN5V5xQB9jsFCW3xQ&s", videoId: "4X4uckVyk9o" },
+        music: { title: "Le Festin", artist: "Camille, Michael Giacchino", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNHLoD4d0BP8qPicmf5IATvkZVnqN5V5xQB9jsFCW3xQ&s", videoId: "beamS4GZ5T8", startTime : 7 },
         pinPos: { top: "47%", left: "40%", zoom: 5 }
     },
     "Marseille": {
         meta: "🌊 Maritime Port | #OldPort",
         img: "https://cdn1.matadornetwork.com/blogs/1/2019/08/Notre-Dame-de-la-Garde-and-old-port-in-Marseille-France-1200x853.jpg",
         food: [
-            { name: "Bouillabaisse", desc: "신선한 지중해산 생선과 갖은 해산물, 사프란, 허브를 넣고 푹 끓여낸 마르세유 전통 명물 생선 스튜 요리.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Escargots_au_beurre_persill%C3%A9.jpg/800px-Escargots_au_beurre_persill%C3%A9.jpg" }
+            { name: "Bouillabaisse (부야베스)", desc: "신선한 지중해산 생선과 갖은 해산물, 사프란, 허브를 넣고 푹 끓여낸 마르세유 전통 명물 생선 스튜 요리.", img: "https://www.hmap.co.kr/upload/editor/1535467634_oY2_Bouillabaisse.jpg" }
         ],
         places: [
             { name: "Basilique Notre-Dame de la Garde (노트르담 드 라 가르드 성당)", desc: "마르세유에서 가장 높은 언덕 위에 서서 항구와 도시 전체를 수호하는 황금빛 성모 마리아상이 있는 성당.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Notre-Dame_de_la_Garde_aerial_view_2020.jpeg/1280px-Notre-Dame_de_la_Garde_aerial_view_2020.jpeg" },
@@ -534,7 +556,7 @@ const cityData = {
         meta: "🏖️ French Riviera | #CoteDazur",
         img: "https://gotripzi.com/_astro/nice-fr-hero.B5uoiVhG.webp",
         food: [
-           { name: "Socca", desc: "병아리콩 가루 반죽을 넓게 펴서 화덕에 바삭하게 구워내 후추를 쳐서 먹는 니스의 길거리 소울푸드.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQrxX2K0jMd0RMEgo8S0MGMKpZe6u3lvoZBMHR2O6WNjYfbqlokPv7XCw&s=10" }
+           { name: "Socca (소카)", desc: "병아리콩 가루 반죽을 넓게 펴서 화덕에 바삭하게 구워내 후추를 쳐서 먹는 니스의 길거리 소울푸드.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQrxX2K0jMd0RMEgo8S0MGMKpZe6u3lvoZBMHR2O6WNjYfbqlokPv7XCw&s=10" }
         ],
         places: [
             { name: "Place Masséna (마세나 광장)", desc: "분홍빛 네오클래식 건물과 바둑판 모양 바닥, 독특한 현대 미술 조각상이 조화를 이루는 니스의 심장 같은 광장.", img: "https://images.trvl-media.com/place/6193618/686ebea2-88a0-48b5-a489-cfc4d8b99719.jpg" },
@@ -548,7 +570,7 @@ const cityData = {
         meta: "🏛️ Eternal City | #History #Gelato",
         img: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Colosseum_in_Rome-April_2007-1-_copie_2B.jpg/1280px-Colosseum_in_Rome-April_2007-1-_copie_2B.jpg",
         food: [
-            { name: "Authentic Carbonara", desc: "크림을 전혀 쓰지 않고 오직 계란 노른자, 페코리노 치즈, 관찰레로만 진득하게 맛을 낸 로마 정통 파스타.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIq4b0dr8noaw-EhouWOHviNLQ_pquPN6Cp-0jnjHRJAZL3SZIMSzuJas&s=10" },
+            { name: "Authentic Carbonara (까르보나라)", desc: "크림을 전혀 쓰지 않고 오직 계란 노른자, 페코리노 치즈, 관찰레로만 진득하게 맛을 낸 로마 정통 파스타.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIq4b0dr8noaw-EhouWOHviNLQ_pquPN6Cp-0jnjHRJAZL3SZIMSzuJas&s=10" },
            { name: "Gelato (젤라또)", desc: "우유와 천연 재료로 만들어 일반 아이스크림보다 쫀득하고 진한 풍미가 특징인 이탈리아 전통 디저트.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIqRY_pZ3Ke0adpNHGqQBIhyMliT9UwQc3o0czgBv_bYc7p3AN-4BIb-s&s=10" }
 
         ],
@@ -578,11 +600,11 @@ const cityData = {
         pinPos: { top: "66%", left: "61%", zoom: 5 }
     },
     "London": {
-        meta: "🇬🇧 Royal Heritage | #BigBen",
+        meta: "👑 Royal Heritage | #BigBen",
         img: "https://bucket-files.city-sightseeing.com/blog/2024/08/londonview.jpg",
         food: [
-            { name: "Fish and Chips", desc: "두툼한 대구 살을 바삭하게 튀겨내 칩스와 함께 서빙되며, 소금과 몰트 식초를 곁들여 먹는 영국 대표 음식.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Fish_and_chips_blackpool.jpg/1280px-Fish_and_chips_blackpool.jpg" },
-            { name: "Afternoon Tea Scone", desc: "갓 구운 스콘에 진한 클로티드 크림과 딸기 잼을 바르고 홍차를 함께 곁들이는 영국의 전통적인 오후 식문화.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWiJlzTBKyN9KmXdA1xw-3a2XINmnbO59seVT-JdK8DmLOSyvAjXwTbfY&s=10" }
+            { name: "Fish and Chips (피쉬 앤 칩스)", desc: "두툼한 대구 살을 바삭하게 튀겨내 칩스와 함께 서빙되며, 소금과 몰트 식초를 곁들여 먹는 영국 대표 음식.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Fish_and_chips_blackpool.jpg/1280px-Fish_and_chips_blackpool.jpg" },
+            { name: "Afternoon Tea Scone (스콘)", desc: "갓 구운 스콘에 진한 클로티드 크림과 딸기 잼을 바르고 홍차를 함께 곁들이는 영국의 전통적인 오후 식문화.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWiJlzTBKyN9KmXdA1xw-3a2XINmnbO59seVT-JdK8DmLOSyvAjXwTbfY&s=10" }
         ],
         places: [
             { name: "Big Ben & Parliament (빅벤과 국회의사당)", desc: "템스강변을 지키며 고딕 양식의 화려한 실루엣을 그리는 거대한 시계탑과 영국의 정치가 흐르는 의사당.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuSKkcwmJkly3J7gZ6lc4q933M84l1tIrXc7Vy-N6Bb2sknTm85UNL_KU&s=10" },
@@ -597,7 +619,7 @@ const cityData = {
         meta: "🐻 Urban Grit | #History #Techno",
         img: "https://a.storyblok.com/f/239725/2998x1686/7f1f93b4b4/01_de_ber_hero_berlincityscape.png/m/3840x2160/filters:quality(70)",
         food: [
-            { name: "Currywurst", desc: "구운 소시지를 썰어 카레 가루가 섞인 매콤달콤한 특제 케첩 소스를 듬뿍 얹어 먹는 베를린의 대표 길거리 음식.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTA_ZusCo7_nQ78Q2_KW7JiVw6LLp4m9Xd6-QWNsu2rr-UcC4NJnSWHnL2M&s=10" }
+            { name: "Currywurst (커리부어스트)", desc: "구운 소시지를 썰어 카레 가루가 섞인 매콤달콤한 특제 케첩 소스를 듬뿍 얹어 먹는 베를린의 대표 길거리 음식.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTA_ZusCo7_nQ78Q2_KW7JiVw6LLp4m9Xd6-QWNsu2rr-UcC4NJnSWHnL2M&s=10" }
         ],
         places: [
             { name: "Brandenburg Gate (브란덴부르크 문)", desc: "과거 분단의 장벽이었으나 현재는 독일의 통일과 유럽의 평화를 상징하는 역사적인 신고전주의 양식 건축물.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9nEjCpsoASjC0TMOwdIikz7QUxXUqwJFzj8KnFjiSJVzu86qYvqTEM-9A&s=10" },
@@ -612,7 +634,7 @@ const cityData = {
         meta: "🎼 City of Music | #Bach",
         img: "https://img.destination.one/remote/.webp?url=https%3A%2F%2Fdam.destination.one%2F923155%2Fdf1734ab013e2104d07cd9893e5f090fa8ba7d4c251a80f4b9ad27e17bf996e4%2Fbundesverwaltungsgericht-und-bibliotheca-albertina-sehensw-rdigkeiten-in-leipzig.jpg&scale=both&mode=crop&quality=90&width=1424&height=612&focuspoint=0.07,0.26",
         food: [
-        { name: "Currywurst (커리 부어스트)", desc: "구운 소시지를 썰어 카레 가루가 섞인 매콤달콤한 특제 케첩 소스를 듬뿍 얹어 먹는 베를린의 대표 길거리 음식.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTA_ZusCo7_nQ78Q2_KW7JiVw6LLp4m9Xd6-QWNsu2rr-UcC4NJnSWHnL2M&s=10" },
+        { name: "Currywurst (커리부어스트)", desc: "구운 소시지를 썰어 카레 가루가 섞인 매콤달콤한 특제 케첩 소스를 듬뿍 얹어 먹는 베를린의 대표 길거리 음식.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTA_ZusCo7_nQ78Q2_KW7JiVw6LLp4m9Xd6-QWNsu2rr-UcC4NJnSWHnL2M&s=10" },
             { name: "Jägerschnitzel (예거 슈니첼)", desc: "바삭하게 튀긴 슈니첼에 버섯 크림소스를 곁들인 독일식 돈가스 요리.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdgy-sY1nuXC2-fUc51FZo3ns3arHQQxslnOwHupM0pMHQmWYFit3uQorc&s=10" }
         ],
         places: [
@@ -624,10 +646,10 @@ const cityData = {
         pinPos: { top: "35%", left: "61%", zoom: 5 }
     },
     "Vienna": {
-        meta: "🇦🇹 Imperial Elegance | #Classic",
+        meta: "🎼 Imperial Elegance | #Classic",
         img: "https://www.planet-wissen.de/kultur/metropolen/wien/introwientramgjpg100~_v-gseagaleriexl.jpg",
         food: [
-            { name: "Hot Dog", desc: "따뜻한 빵 속에 소시지와 소스를 넣어 즐기는 오스트리아의 대표 길거리 음식.", img: "https://s3-media0.fl.yelpcdn.com/bphoto/zj1NZqE6bj5G1WJySGh97g/1000s.jpg" }
+            { name: "Hot Dog (핫도그)", desc: "따뜻한 빵 속에 소시지와 소스를 넣어 즐기는 오스트리아의 대표 길거리 음식.", img: "https://s3-media0.fl.yelpcdn.com/bphoto/zj1NZqE6bj5G1WJySGh97g/1000s.jpg" }
         ],
         places: [
             { name: "Vienna State Opera (빈 국립 오페라 극장)", desc: "파리, 밀라노와 함께 유럽 3대 오페라 극장으로 꼽히며 매일 밤 세계 최고 수준의 명품 클래식 및 오페라 공연이 열리는 곳.", img: "https://cdn.jnilbo.com/news/photo/201902/58746921005_3_5724.jpg" },
@@ -656,19 +678,19 @@ const cityData = {
         meta: "👑 Pearl of Danube | #NightView",
         img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/blt73e4f5e03cc6a46a/688d3662558a1b8b50f6f1d0/BCC-2025-EXPLORER-BUDAPEST-IN-NOVEMBER-HEADER_MOBILE.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif",
         food: [
-            { name: "Kürtőskalács (퀴르퇴시칼라치, 굴뚝빵)", desc: "반죽을 원통형 틀에 말아 구운 뒤 설탕과 시나몬 등을 입힌 헝가리 전통 디저트.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToJa25WY3XB3COPCWPkIcf-UBsKJHniOhyEE5wJPjCQ5MbX-JA-6a5UR9W&s=10" }
+            { name: "Kürtőskalács (굴뚝빵)", desc: "반죽을 원통형 틀에 말아 구운 뒤 설탕과 시나몬 등을 입힌 헝가리 전통 디저트.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToJa25WY3XB3COPCWPkIcf-UBsKJHniOhyEE5wJPjCQ5MbX-JA-6a5UR9W&s=10" }
         ],
         places: [
             { name: "Fisherman's Bastion (어부의 요새)", desc: "신고딕 양식의 백색 테라스와 고깔 모양 탑들이 모여 동화 같은 성벽을 이루며, 국회의사당의 찬란한 야경을 감상하는 최고의 요충지.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTk29YjacDWm5b7zMFNOe6zpbWZS2jrKobkn74_TvFIjXNQ9Fwld-U11QU&s=10" },
             { name: "Széchenyi Chain Bridge (세체니 다리)", desc: "부다 지역과 페스트 지역을 최초로 연결한 도나우 강의 상징적인 석조 현수교로, 입구를 지키는 네 마리의 사자 조각상이 유명합니다.", img: "https://www.windsortour.co.kr/images/area_img/HU/BUD/HUBUD3200390_0003.jpg?CMD=resize&width=100%" },
-            { name: "Vajdahunyad Castle (버이더후녀드 성)", desc: "시민공원 호숫가에 위치한 고풍스러운 성으로, 로마네스크, 고딕, 바로크 등 헝가리의 다채로운 역사적 건축 양식을 복합적으로 재현한 공간.", img: "https://mblogthumb-phinf.pstatic.net/MjAyNDAxMTVfMjI3/MDAxNzA1MzA0MjgxNTg2.Eueq4gjTSYSpSX5fkIqF8IXoyXb81aU5gWds6A3eLgQg.C0rgVusxxuYmNxbWuVwZGrcyVMTc2pq7n7_rprQzKE0g.JPEG.dong5200/%EB%B2%84%EC%9D%B4%EB%8D%94%ED%9B%84%EB%85%80%EB%93%9C%EC%84%B1_%EC%95%BC%EA%B2%BD102.jpg?type=w800" },
+            { name: "Vajdahunyad Castle (버이더후녀드 성)", desc: "시민공원 호숫가에 위치한 고풍스러운 성으로, 로마네스크, 고딕, 바로크 등 헝가리의 다채로운 역사적 건축 양식을 복합적으로 재현한 공간.", img: "https://upload.wikimedia.org/wikipedia/commons/2/22/Vajdahunyad_v%C3%A1ra_Budapest_September_2013.jpg" },
 	{ name: "Liszt Ház Budapest (리스트 하우스)", desc: "Liszt Ferenc Memorial Museum으로, 작곡가 프란츠 리스트가 살았던 집을 보존한 기념관이자 박물관.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZE8r6JI2ZAqjWcqxfKTvCPsnBCHS59y4ZY29QOEnU6aLN9bNfyleehQPZ&s=10" }
         ],
         music: { title: "Hungarian Rhapsody No. 2", artist: "Franz Liszt", cover: "https://i.scdn.co/image/ab67616d0000b273d8c4a7610423ea9afa0f809f", videoId: "LdH1hSWGFGU", startTime : 342 },
         pinPos: { top: "51%", left: "78%", zoom: 5 }
     },
     "Warsaw": {
-        meta: "🇵🇱 Phoenix City | #Chopin",
+        meta: "🎵 Phoenix City | #Chopin",
         img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/bltdd818cc05eb26425/681014f13b56c2df6b174a1a/iStock-2200408050-Header_Mobile.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif",
         food: [
 
@@ -678,14 +700,14 @@ const cityData = {
             { name: "Łazienki Park (와지엔키 공원)", desc: "왕실의 여름 궁전이었던 물 위의 궁전과 넓은 숲이 조화를 이루며, 여름철 주말마다 커다란 쇼팽 동상 아래서 무료 피아노 콘서트가 열리는 쉼터.", img: "https://www.windsortour.co.kr/images/area_img/PL/WAW/PLWAW3200335_0001.jpg?CMD=resize&width=100%" },
             { name: "Birthplace of Frédéric Chopin (프레데리크 쇼팽 생가)", desc: "바르샤바 근교 젤라조바 볼라에 위치한 피아노의 시인 쇼팽이 태어난 생가로, 푸르른 대정원과 함께 그의 어린 시절 기록이 소담하게 남아있습니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFkP8O35eLtZBn5ApDO-yXOLHnJyGf92to0N3uCNLHBg&s=10" }
         ],
-        music: { title: "Mazurka, Op. 24: No.4 in B-Flat Minor, Moderato", artist: "Frédéric Chopin", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZQYaMehFPBbF39NqnQrfnKqb-XQuHNLxrUvlZ3pP4hGGnYCdnx5RUOxdi&s=10", videoId: "taSBPw9DClc" },
+        music: { title: "Mazurka, Op. 24: No.4 in B-Flat Minor, Moderato", artist: "Frédéric Chopin", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZQYaMehFPBbF39NqnQrfnKqb-XQuHNLxrUvlZ3pP4hGGnYCdnx5RUOxdi&s=10", videoId: "FcfLrk-s65w", startTime :11 },
         pinPos: { top: "32%", left: "83%", zoom: 5 }
     },
     "Lisbon": {
         meta: "💛 Yellow Tram | #Nostalgia",
         img: "https://www.farejaviagens.com.br/wp-content/uploads/2024/11/Castelo-de-Sa%CC%83o-Jorge-Lisboa-Portugal-scaled.jpeg",
         food: [
-            { name: "Pastel de Nata", desc: "포르투갈 제로니무스 수도원에서 시작된 원조 에그타르트. 페이스트리의 파삭한 식감과 촉촉하고 달콤한 커스터드 크림이 예술입니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT914IGqZRXz0oAMiYj_Nx4TssP5KUrVrvLkQvgBInWv8NgfCc-S3i-pZDn&s=10" },
+            { name: "Pastel de Nata (파스텔 데 나타, 에그타르트)", desc: "포르투갈 제로니무스 수도원에서 시작된 원조 에그타르트. 페이스트리의 파삭한 식감과 촉촉하고 달콤한 커스터드 크림이 예술입니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT914IGqZRXz0oAMiYj_Nx4TssP5KUrVrvLkQvgBInWv8NgfCc-S3i-pZDn&s=10" },
 	{ name: "Bifana", desc: "얇게 썬 돼지고기를 마늘과 향신료로 양념해 바게트에 넣은 포르투갈식 샌드위치.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcROmKrvB4-qKABGVOwbKkn12HHmJHmCgA7Bp3eg4klq-yJ39PnLqGdGgRn2&s=10" }
 
         ],
@@ -701,7 +723,7 @@ const cityData = {
         meta: "🍷 Sweet River | #PortWine",
         img: "https://static.independent.co.uk/s3fs-public/thumbnails/image/2017/06/26/18/porto-main.jpg",
         food: [
-            { name: "Pastel de Nata", desc: "포르투갈 제로니무스 수도원에서 시작된 원조 에그타르트. 페이스트리의 파삭한 식감과 촉촉하고 달콤한 커스터드 크림이 예술입니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWqg2zxtvf1zyafBAD0W8lDAJq6TZW8AebNamHwzyIXOhZWUDyIcu5lZo&s=10" }
+            { name: "Pastel de Nata (파스텔 데 나타, 에그타르트)", desc: "포르투갈 제로니무스 수도원에서 시작된 원조 에그타르트. 페이스트리의 파삭한 식감과 촉촉하고 달콤한 커스터드 크림이 예술입니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWqg2zxtvf1zyafBAD0W8lDAJq6TZW8AebNamHwzyIXOhZWUDyIcu5lZo&s=10" }
         ],
         places: [
             { name: "Dom Luís I Bridge (동 루이스 1세 다리)", desc: "에펠의 제자가 설계한 도루 강을 가로지르는 아름다운 복층 철교로, 2층의 보행자 전용 길을 걸으며 감상하는 포르투 히베이라의 야경이 최고로 꼽힙니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRB-0SAJm-6Q4puD2pydrh43PU4bNkJ4uQpUPFjKDeQNA&s=10" },
@@ -925,6 +947,16 @@ let currentActiveCountry = "";
 
         // 페이지 로드 시 테마 적용
         initTheme();
+
+        const title = document.querySelector('.travel-title');
+        title.innerHTML = title.textContent.split('').map(char => 
+            `<span style="opacity:0; transition: opacity 0.5s;">${char}</span>`
+        ).join('');
+
+        const spans = title.querySelectorAll('span');
+        spans.forEach((span, i) => {
+            setTimeout(() => { span.style.opacity = '1'; }, i * 100);
+        });
     </script>
 </body>
 </html>
