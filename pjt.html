@@ -18,7 +18,82 @@
         h1, h2, h3, h4, .font-serif {
             font-family: 'Playfair Display', serif;
         }
-        
+
+                /* 페이지 진입 애니메이션 */
+        @keyframes fadeInSlide {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-entrance {
+            animation: fadeInSlide 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* 모바일에서의 반응형 대응 강화 */
+        @media (max-width: 768px) {
+            .map-wrapper { padding: 1rem !important; }
+            .side-panel { width: 100% !important; }
+        }
+
+        /* 다크모드 고정 스타일 */
+        .dark body { background-color: #1c1917 !important; color: #d6d3d1 !important; }
+        .dark .bg-\[\#f5f3ef\] { background-color: #292524 !important; }
+        .dark .bg-white { background-color: #292524 !important; }
+        .dark .bg-stone-50 { background-color: #292524 !important; }
+        .dark .bg-white\/80 { background-color: rgba(41, 37, 36, 0.8) !important; }
+        .dark .bg-white\/50 { background-color: rgba(41, 37, 36, 0.5) !important; }
+
+        /* 텍스트 색상 강제 지정 */
+        .dark h1, .dark h2, .dark h3, .dark h4, .dark p, .dark span { color: #e7e5e4 !important; }
+        .dark .text-stone-800 { color: #f5f5f4 !important; }
+        .dark .text-stone-500 { color: #a8a29e !important; }
+        .dark .text-stone-400 { color: #78716c !important; }
+
+        /* 경계선 및 칩 색상 */
+        .dark .border-stone-200 { border-color: #44403c !important; }
+        .dark .border-stone-300\/50 { border-color: #57534e !important; }
+        .dark .border-t, .dark .border-b { border-color: #44403c !important; }
+
+        /* 사이드 패널 내부 */
+        .dark .side-panel { background-color: #1c1917 !important; border-left: 1px solid #44403c !important; }
+        .dark .city-chip { background-color: #44403c !important; color: #d6d3d1 !important; border-color: #57534e !important; }
+        .dark .city-chip.active { background-color: #e7e5e4 !important; color: #292524 !important; }
+                
+        /* 1. 메인 영역 다크모드 배경 강제 */
+        .dark main { background-color: #1c1917 !important; }
+
+        /* 2. 탭 버튼 및 내부 텍스트 가독성 */
+        .dark .nav-btn { color: #a8a29e !important; }
+        .dark .nav-btn.active { color: #f5f5f4 !important; border-color: #f5f5f4 !important; }
+
+        /* 3. 사이드 패널 내 카드 및 텍스트 상세 제어 */
+        .dark #panelContent p, 
+        .dark #panelContent h4, 
+        .dark #panelContent span { color: #d6d3d1 !important; }
+
+        /* 4. 음식 및 장소 카드 배경 및 테두리 */
+        .dark .tab-content > div { 
+            background-color: #292524 !important; 
+            border: 1px solid #44403c !important; 
+        }   
+
+/* 지도와 핀이 어두운 배경에서 입체적으로 보이게 설정 */
+.dark .map-wrapper > div {
+    /* 하얀색 빛이 도는 그림자를 추가하여 지도를 띄움 */
+    filter: drop-shadow(0 20px 30px rgba(255, 255, 255, 0.1)) !important;
+}
+
+.dark .map-wrapper img {
+    /* 이미지 자체는 약간 더 어둡게 처리 */
+    filter: grayscale(20%) brightness(0.6) !important;
+}
+
+
+        /* 다크모드 시 메인 배경에 깊이감 부여 */
+        .dark main {
+            background: radial-gradient(circle at center, #292524 0%, #1c1917 100%) !important;
+        }
+                
         /* 🗺️ 메인 지도 이미지 컨테이너 (부모) */
         .map-wrapper {
             position: relative;
@@ -123,11 +198,11 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-.city-chip.active:hover {
-    background-color: #44403c; /* 살짝 더 밝은 흑갈색으로 배경 변경 */
-    color: #ffffff;            /* 글씨색은 완벽한 흰색으로 선명하게 고정 */
-    border-color: #44403c;
-}
+        .city-chip.active:hover {
+            background-color: #44403c; /* 살짝 더 밝은 흑갈색으로 배경 변경 */
+            color: #ffffff;            /* 글씨색은 완벽한 흰색으로 선명하게 고정 */
+            border-color: #44403c;
+        }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -140,20 +215,29 @@
         }
     </style>
 </head>
-<body class="h-screen flex flex-col">
 
-    <header class="p-6 text-center bg-[#f5f3ef] z-10 relative">
-        <h1 class="text-3xl md:text-4xl font-bold tracking-[0.15em] text-stone-800">TRAVEL ARCHIVE</h1>
-        <p class="text-sm font-sans tracking-[0.3em] text-stone-500 mt-2">WESTERN & CENTRAL EUROPE</p>
 
-        <!-- 소개 문구 추가 -->
-    <div class="mt-6 mx-auto max-w-lg">
-        <p class="text-stone-500 text-sm font-normal leading-relaxed tracking-wide border-t border-stone-300/50 pt-4">
-            교환학생 시절, 유럽을 여행하며 방문한 장소와 음식, <br class="hidden md:block">
-            그리고 함께 들었던 음악들을 정리한 아카이브입니다.
-        </p>
-    </div>
+<body class="h-screen flex flex-col bg-[#f5f3ef] dark:bg-[#1c1917] transition-colors duration-300">
+    
+    <header class="p-6 md:px-12 lg:px-20 bg-[#f5f3ef] dark:bg-[#292524] z-10 relative flex justify-between items-center transition-colors duration-500">
+        <button onclick="toggleDarkMode()" 
+                class="w-10 h-10 flex items-center justify-center rounded-full bg-stone-200 dark:bg-stone-700 hover:scale-110 transition-all duration-300 shadow-md">
+            <span id="themeIcon">🌙</span>
+        </button>
 
+        <div class="text-center">
+            <h1 class="text-3xl md:text-4xl font-bold tracking-[0.15em] text-stone-800 dark:text-stone-100 transition-colors">TRAVEL ARCHIVE</h1>
+            <p class="text-sm font-sans tracking-[0.3em] text-stone-500 dark:text-stone-400 mt-2 transition-colors">WESTERN & CENTRAL EUROPE</p>
+            
+            <div class="mt-6 mx-auto max-w-lg hidden md:block">
+                <p class="text-stone-500 dark:text-stone-400 text-sm font-normal leading-relaxed tracking-wide border-t border-stone-300/50 dark:border-stone-600 pt-4 transition-colors">
+                    교환학생 시절, 유럽을 여행하며 방문한 장소와 음식, <br>
+                    그리고 함께 들었던 음악들을 정리한 아카이브입니다.
+                </p>
+            </div>
+        </div>
+
+        <div class="w-10"></div> 
     </header>
 
     <div class="marquee-container py-2.5 text-stone-400 text-xs tracking-widest border-t border-b bg-white/50 backdrop-blur-sm z-10 relative">
@@ -163,7 +247,7 @@
         </div>
     </div>
 
-    <main class="flex-grow relative flex items-center bg-[#e8e4db] overflow-hidden justify-center">
+    <main class="flex-grow relative flex items-center bg-[#e8e4db] overflow-hidden justify-center animate-entrance">
         <div id="mapContainer" class="map-container absolute inset-0 flex items-center justify-center">
             
             <div class="map-wrapper flex items-center justify-center p-8">
@@ -754,19 +838,18 @@ let currentActiveCountry = "";
             resetTabs();
         }
 
-        // 유튜브 제공 소스코드를 완벽 이식하여 오류를 차단한 재생 함수
+        // 수정된 playMusic 함수
         function playMusic(event) {
-            if (event) event.stopPropagation(); // 핀 클릭 꼬임 방지
-            
+            if (event) event.stopPropagation();
             if (!currentVideoId) return;
             
             const container = document.getElementById('musicPlayerContainer');
             
-            // 💡 &start=${currentStartTime} 규칙이 0 혹은 지정 초 단위로 정상 대입됩니다.
+            // &mute=1 파라미터를 추가하여 브라우저의 자동 재생 정책 통과
             container.innerHTML = `
                 <iframe 
                     class="absolute inset-0 w-full h-full z-30" 
-                    src="https://www.youtube.com/embed/${currentVideoId}?autoplay=1&start=${currentStartTime}" 
+                    src="https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=1&start=${currentStartTime}" 
                     title="YouTube video player" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
@@ -812,6 +895,36 @@ let currentActiveCountry = "";
             // 탭 변경 시 패널 콘텐츠 상단으로 스크롤
             document.getElementById('panelContent').scrollTop = 0;
         }
+
+                // 다크모드 토글 함수
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            
+            html.classList.toggle('dark');
+            
+            if (html.classList.contains('dark')) {
+                localStorage.theme = 'dark';
+                icon.innerText = '☀️';
+            } else {
+                localStorage.theme = 'light';
+                icon.innerText = '🌙';
+            }
+        }
+
+        // 초기 로딩 시 설정 불러오기
+        function initTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').innerText = '☀️';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('themeIcon').innerText = '🌙';
+            }
+        }
+
+        // 페이지 로드 시 테마 적용
+        initTheme();
     </script>
 </body>
 </html>
