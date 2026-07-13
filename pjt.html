@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Archive in Europe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f5f3ef; 
+            color: #4a4a4a; 
+            overflow-x: hidden; 
+        }
+        
+        h1, h2, h3, h4, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        /* 🗺️ 메인 지도 이미지 컨테이너 (부모) */
+        .map-wrapper {
+            position: relative;
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .map-container.shifted .map-wrapper { 
+            transform: translateX(-23.5%); 
+        }
+
+        .europe-map-soft {
+            filter: contrast(0.85) brightness(1.15) grayscale(20%);
+            opacity: 0.85;
+            transition: filter 0.5s ease, opacity 0.5s ease;
+        }
+
+        #map-image { 
+            width: 100%;
+            height: auto;
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            transform-origin: top left;
+        }
+        
+        /* 사이드 패널 애니메이션 */
+        .side-panel {
+            position: fixed; right: -50%; top: 0; width: 50%; height: 100%;
+            background: rgba(248, 247, 244, 0.98); 
+            backdrop-filter: blur(20px);
+            transition: right 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            border-left: 1px solid #dcd7ce;
+            display: flex; flex-direction: column;
+            z-index: 50;
+        }
+        .side-panel.open { right: 0; }
+        
+        /* 🌟 [중요 교정] 탭 내용물 꼬임 방지 및 Grid 레이아웃 유지 */
+        .tab-content { 
+            display: none !important; 
+        }
+        
+        /* 장소와 음식 탭이 활성화될 때는 무조건 2열 그리드로 표시하도록 선언 */
+        .tab-content.active.grid { 
+            display: grid !important; 
+            animation: slideUpFade 0.5s ease forwards;
+        }
+        
+        /* 음악 탭 등 일반 탭이 활성화될 때는 블록 요소로 표시 */
+        .tab-content.active:not(.grid) { 
+            display: block !important; 
+            animation: slideUpFade 0.5s ease forwards;
+        }
+
+        @keyframes slideUpFade { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        .nav-btn { 
+            color: #a19d96; transition: all 0.3s; 
+            border-left: 2px solid transparent; 
+            padding-left: 12px;
+            text-align: left;
+        }
+        .nav-btn.active { 
+            color: #292524; font-weight: 600; 
+            border-left: 2px solid #292524; 
+        }
+
+        .country-pin {
+            transition: all 0.3s ease;
+        }
+
+        .country-pin.active {
+            z-index: 30 !important;
+        }
+
+        .country-pin.active span:first-child {
+            transform: translateY(-0.25rem) !important;
+        }
+
+        .country-pin.active span:last-child {
+            background-color: #d97706 !important;
+        }
+        
+        /* 마퀴 효과 */
+        .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; border-color: #dcd7ce; }
+        .marquee { display: inline-block; animation: scroll 35s linear infinite; }
+        @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        
+        /* 칩 버튼 스타일링 */
+        .city-chip { 
+            transition: all 0.3s ease; 
+            border: 1px solid #dcd7ce; 
+        }
+        .city-chip.active { 
+            background-color: #292524; 
+            color: #f5f3ef; 
+            border-color: #292524; 
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+.city-chip.active:hover {
+    background-color: #44403c; /* 살짝 더 밝은 흑갈색으로 배경 변경 */
+    color: #ffffff;            /* 글씨색은 완벽한 흰색으로 선명하게 고정 */
+    border-color: #44403c;
+}
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
+
+        @media (max-width: 1024px) {
+            .map-container.shifted .map-wrapper { transform: translateX(0); }
+            .side-panel { width: 100%; right: -100%; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <header class="p-6 text-center bg-[#f5f3ef] z-10 relative">
+        <h1 class="text-3xl md:text-4xl font-bold tracking-[0.15em] text-stone-800">TRAVEL ARCHIVE</h1>
+        <p class="text-sm font-sans tracking-[0.3em] text-stone-500 mt-2">WESTERN & CENTRAL EUROPE</p>
+
+        <!-- 소개 문구 추가 -->
+    <div class="mt-6 mx-auto max-w-lg">
+        <p class="text-stone-500 text-sm font-normal leading-relaxed tracking-wide border-t border-stone-300/50 pt-4">
+            교환학생 시절, 유럽을 여행하며 방문한 장소와 음식, <br class="hidden md:block">
+            그리고 함께 들었던 음악들을 정리한 아카이브입니다.
+        </p>
+    </div>
+
+    </header>
+
+    <div class="marquee-container py-2.5 text-stone-400 text-xs tracking-widest border-t border-b bg-white/50 backdrop-blur-sm z-10 relative">
+        <div class="marquee">
+            Paris • London • Warsaw • Vienna • Salzburg • Lisbon • Porto • Budapest • Rome • Florence • Berlin • Leipzig • Barcelona • Madrid • Malaga • Granada &nbsp;&nbsp;&nbsp;&nbsp; 
+            Paris • London • Warsaw • Vienna • Salzburg • Lisbon • Porto • Budapest • Rome • Florence • Berlin • Leipzig • Barcelona • Madrid • Malaga • Granada 
+        </div>
+    </div>
+
+    <main class="flex-grow relative flex items-center bg-[#e8e4db] overflow-hidden justify-center">
+        <div id="mapContainer" class="map-container absolute inset-0 flex items-center justify-center">
+            
+            <div class="map-wrapper flex items-center justify-center p-8">
+                <div class="relative w-full max-w-[1000px] aspect-[4/3] flex items-center justify-center">
+                    
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Central_and_Western_Europe_blank_map.svg/3840px-Central_and_Western_Europe_blank_map.svg.png" 
+                         alt="Europe Map" 
+                         class="w-full h-full object-contain drop-shadow-2xl opacity-50 grayscale-[10%]">
+                         
+                    <!-- 핀 네비게이션 버튼 리스트 -->
+                    <button onclick="openCountryPanel('Spain', this)" class="country-pin absolute top-[67%] left-[25%] flex flex-col items-center group cursor-pointer z-10 transform scale-[0.7] md:scale-100 transition-all hover:z-20">
+                        <span class="text-2xl md:text-3xl filter drop-shadow-md group-hover:-translate-y-1 transition-transform duration-300">📍</span>
+                        <span class="bg-stone-800 text-stone-100 text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded shadow-lg mt-0.5 font-semibold tracking-wider group-hover:bg-amber-600 transition-colors">SPAIN</span>
+                    </button>
+
+                    <button onclick="openCountryPanel('Portugal', this)" class="country-pin absolute top-[70%] left-[12%] flex flex-col items-center group cursor-pointer z-10 transform scale-[0.7] md:scale-100 transition-all hover:z-20">
+                        <span class="text-2xl md:text-3xl filter drop-shadow-md group-hover:-translate-y-1 transition-transform duration-300">📍</span>
+                        <span class="bg-stone-800 text-stone-100 text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded shadow-lg mt-0.5 font-semibold tracking-wider group-hover:bg-amber-600 transition-colors">PORTUGAL</span>
+                    </button>
+
+                    <button onclick="openCountryPanel('Germany', this)" class="country-pin absolute top-[25%] left-[53%] flex flex-col items-center group cursor-pointer z-10 transform scale-[0.7] md:scale-100 transition-all hover:z-20">
+                        <span class="text-2xl md:text-3xl filter drop-shadow-md group-hover:-translate-y-1 transition-transform duration-300">📍</span>
+                        <span class="bg-stone-800 text-stone-100 text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded shadow-lg mt-0.5 font-semibold tracking-wider group-hover:bg-amber-600 transition-colors">GERMANY</span>
+                    </button>
+
+                    <button onclick="openCountryPanel('Poland', this)" class="country-pin absolute top-[23%] left-[72%] flex flex-col items-center group cursor-pointer z-10 transform scale-[0.7] md:scale-100 transition-all hover:z-20">
+                        <span class="text-2xl md:text-3xl filter drop-shadow-md group-hover:-translate-y-1 transition-transform duration-300">📍</span>
+                        <span class="bg-stone-800 text-stone-100 text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded shadow-lg mt-0.5 font-semibold tracking-wider group-hover:bg-amber-600 transition-colors">POLAND</span>
+                    </button>
+
+                    <button onclick="openCountryPanel('Austria', this)" class="country-pin absolute top-[42%] left-[62%] flex flex-col items-center group cursor-pointer z-10 transform scale-[0.7] md:scale-100 transition-all hover:z-20">
+                        <span class="text-2xl md:text-3xl filter drop-shadow-md group-hover:-translate-y-1 transition-transform duration-300">📍</span>
+                        <span class="bg-stone-800 text-stone-100 text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded shadow-lg mt-0.5 font-semibold tracking-wider group-hover:bg-amber-600 transition-colors">AUSTRIA</span>
+                    </button>
+
+                    <button onclick="openCountryPanel('Hungary', this)" class="country-pin absolute top-[44%] left-[72%] flex flex-col items-center group cursor-pointer z-10 transform scale-[0.7] md:scale-100 transition-all hover:z-20">
+                        <span class="text-2xl md:text-3xl filter drop-shadow-md group-hover:-translate-y-1 transition-transform duration-300">📍</span>
+                        <span class="bg-stone-800 text-stone-100 text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded shadow-lg mt-0.5 font-semibold tracking-wider group-hover:bg-amber-600 transition-colors">HUNGARY</span>
+                    </button>
+
+                    <button onclick="openCountryPanel('France', this)" class="country-pin absolute top-[40%] left-[37%] flex flex-col items-center group cursor-pointer z-10 transform scale-[0.7] md:scale-100 transition-all hover:z-20">
+                        <span class="text-2xl md:text-3xl filter drop-shadow-md group-hover:-translate-y-1 transition-transform duration-300">📍</span>
+                        <span class="bg-stone-800 text-stone-100 text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded shadow-lg mt-0.5 font-semibold tracking-wider group-hover:bg-amber-600 transition-colors">FRANCE</span>
+                    </button>
+
+                    <button onclick="openCountryPanel('Italy', this)" class="country-pin absolute top-[60%] left-[59%] flex flex-col items-center group cursor-pointer z-10 transform scale-[0.7] md:scale-100 transition-all hover:z-20">
+                        <span class="text-2xl md:text-3xl filter drop-shadow-md group-hover:-translate-y-1 transition-transform duration-300">📍</span>
+                        <span class="bg-stone-800 text-stone-100 text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded shadow-lg mt-0.5 font-semibold tracking-wider group-hover:bg-amber-600 transition-colors">ITALY</span>
+                    </button>
+
+                    <button onclick="openCountryPanel('UnitedKingdom', this)" class="country-pin absolute top-[25%] left-[30%] flex flex-col items-center group cursor-pointer z-10 transform scale-[0.7] md:scale-100 transition-all hover:z-20">
+                        <span class="text-2xl md:text-3xl filter drop-shadow-md group-hover:-translate-y-1 transition-transform duration-300">📍</span>
+                        <span class="bg-stone-800 text-stone-100 text-[10px] md:text-xs px-2 py-0.5 md:py-1 rounded shadow-lg mt-0.5 font-semibold tracking-wider group-hover:bg-amber-600 transition-colors">UK</span>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div class="marquee-container py-2.5 text-stone-400 text-xs tracking-widest border-t border-b bg-white/50 backdrop-blur-sm z-10 relative">
+        <div class="marquee" style="animation-direction: reverse;">
+            Gastronomy • Landmarks • Melodies • Culture • Heritage • Architecture • Scenery • Art • History • Voyage &nbsp;&nbsp;&nbsp;&nbsp; 
+            Gastronomy • Landmarks • Melodies • Culture • Heritage • Architecture • Scenery • Art • History • Voyage
+        </div>
+    </div>
+
+
+    <!-- 사이드 패널 구역 -->
+    <aside id="sidePanel" class="side-panel shadow-[0_0_40px_rgba(0,0,0,0.15)]">
+        
+        <!-- 상단 헤더: 국가 및 도시 선택 -->
+        <div class="flex justify-between items-start px-8 pt-8 pb-4 shrink-0 bg-white/80 backdrop-blur-md border-b border-stone-200">
+            <div class="w-full pr-8">
+                <h3 id="panelCountryHeader" class="text-sm font-bold text-stone-400 tracking-widest uppercase mb-3">-</h3>
+                <div id="citySelector" class="flex flex-wrap gap-2.5"></div>
+            </div>
+            <button onclick="closePanel()" class="text-3xl text-stone-400 hover:text-stone-800 transition-colors leading-none">&times;</button>
+        </div>
+        
+        <!-- 메인 도시 비주얼 영역 -->
+        <div class="px-8 pt-6 pb-2 shrink-0">
+            <div class="flex flex-col md:flex-row gap-4 h-auto md:h-72 mb-2">
+                <!-- 📸 대형 메인 도시 사진 -->
+                <div class="w-full md:w-3/4 h-64 md:h-full bg-stone-300 rounded-2xl shadow-md overflow-hidden relative group">
+                    <img id="panelImg" src="" alt="City" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
+                        <h2 id="panelCity" class="text-4xl md:text-5xl font-bold text-white drop-shadow-lg mb-1">-</h2>
+                        <p id="panelMeta" class="text-sm md:text-md text-amber-300/90 font-medium tracking-wide drop-shadow">-</p>
+                    </div>
+                </div>
+
+                <!-- 미니맵 컨테이너 -->
+                <div class="hidden md:flex w-1/4 bg-[#e8e4db] rounded-2xl border border-stone-300 relative overflow-hidden shadow-inner items-center justify-center aspect-[4/3]">
+                    <img 
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Central_and_Western_Europe_blank_map.svg/3840px-Central_and_Western_Europe_blank_map.svg.png" 
+                        class="w-full h-auto max-w-none absolute opacity-60" 
+                        id="miniMapBase"
+                        style="transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);"
+                    >
+                    <div 
+                        id="miniMapPin" 
+                        class="absolute z-10 hidden"
+                        style="left: 50%; top: 50%; transform: translate(-50%, -100%);"
+                    >
+                        <span class="text-2xl text-red-500">📍</span>
+                    </div>
+                </div>
+                
+                <!-- 어두운 오버레이 톤 유지 -->
+                <div class="absolute inset-0 bg-black/5 pointer-events-none"></div>
+                
+                <!-- 미니맵 핀 -->
+                <div 
+                    id="miniMapPin" 
+                    class="absolute text-3xl filter drop-shadow-md animate-bounce z-10 text-red-500" 
+                    style="top: 50%; left: 50%; transform: translate(-50%, -100%); transition: all 0.3s ease;">
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 탭 및 콘텐츠 영역 -->
+        <div class="flex flex-col md:flex-row flex-grow px-8 pb-8 overflow-hidden mt-4">
+            
+            <!-- 탭 네비게이션 -->
+            <nav class="flex md:flex-col gap-6 md:gap-8 mb-6 md:mb-0 md:mr-8 md:border-r border-stone-200 md:pr-6 shrink-0 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+                <button onclick="showTab(event, 'place')" class="nav-btn text-sm uppercase tracking-[0.2em] active whitespace-nowrap">Place</button>
+                <button onclick="showTab(event, 'food')" class="nav-btn text-sm uppercase tracking-[0.2em] whitespace-nowrap">Food</button>
+                <button onclick="showTab(event, 'music')" class="nav-btn text-sm uppercase tracking-[0.2em] whitespace-nowrap">Music</button>
+            </nav>
+            
+            <!-- 콘텐츠 컨테이너 (스크롤 가능) -->
+            <div id="panelContent" class="flex-grow overflow-y-auto pr-2 custom-scrollbar">
+                
+                <!-- 🏛️ 장소 탭: 2열 격자 배치 지정 (grid grid-cols-1 sm:grid-cols-2 gap-4) -->
+                <div id="place" class="tab-content active grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                    <!-- JS로 동적 생성됨 -->
+                </div>
+                
+                <!-- 🍕 음식 탭: 2열 격자 배치 지정 (grid grid-cols-1 sm:grid-cols-2 gap-4) -->
+                <div id="food" class="tab-content grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                    <!-- JS로 동적 생성됨 -->
+                </div>
+
+<!-- 🎵 음악 탭: 제목 길이에 따라 크기가 늘어나는 고정 1:1 구조 -->
+<div id="music" class="tab-content">
+    <div class="bg-white rounded-2xl shadow-md border border-stone-100 overflow-hidden max-w-[400px] mx-auto">
+        
+        <!-- 📸 플레이어/커버 컨테이너 -->
+        <div id="musicPlayerContainer" class="relative aspect-square w-full bg-stone-900 group cursor-pointer overflow-hidden flex items-center justify-center">
+            <!-- 자바스크립트로 재생 버튼과 이미지가 동적 삽입됩니다 -->
+        </div>
+        
+        <!-- 📝 텍스트 영역: 제목이 길어지면 아래로 유연하게 늘어납니다 -->
+        <div class="p-6 text-center bg-stone-50 border-t border-stone-100">
+            <p class="text-[10px] font-bold text-amber-600 tracking-widest uppercase mb-1">Featured Track</p>
+            <!-- [교정] truncate를 빼고 break-words를 넣어 글자가 길어지면 자동으로 줄바꿈되며 늘어납니다 -->
+            <h4 id="musicTitle" class="font-serif font-bold text-stone-800 text-xl md:text-2xl mb-1 break-words leading-snug">-</h4>
+            <p id="musicArtist" class="text-xs text-stone-500 font-medium break-words">-</p>
+        </div>
+
+    </div>
+</div>
+
+            </div>
+        </div>
+    </aside>
+ 
+    <script>
+        const countryGroups = {
+            "Spain": { cities: ["Madrid", "Barcelona", "Granada", "Málaga", "Mallorca"], countryName: "Spain" },
+            "Portugal": { cities: ["Lisbon", "Porto"], countryName: "Portugal" },
+            "Germany": { cities: ["Berlin", "Leipzig"], countryName: "Germany" },
+            "Poland": { cities: ["Warsaw"], countryName: "Poland" },
+            "Hungary": { cities: ["Budapest"], countryName: "Hungary" },
+            "Austria": { cities: ["Vienna", "Salzburg"], countryName: "Austria" },
+            "France": { cities: ["Paris", "Marseille", "Nice"], countryName: "France" },
+            "Italy": { cities: ["Rome", "Florence"], countryName: "Italy" },
+            "UnitedKingdom": { cities: ["London"], countryName: "United Kingdom" }
+        };
+	
+	// 상세한 이미지 및 미디어 데이터 모델 구성
+const cityData = {
+    "Madrid": {
+        meta: "🏛️ Royal Capital | #Art #Tapas",
+        img: "https://images.trvl-media.com/place/178281/edbf43cf-0496-4327-900f-411c38682541.jpg",
+        food: [
+            { name: "Tapas", desc: "다양한 음식을 한입 크기로 즐기는 스페인식 요리", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8VkZoMfDvULEab10d0sGF0349GkjEbUq1ordbRLsR2soeAM4ix4WsKq4&s=10" },
+            { name: "Churros con Chocolate", desc: "갓 튀겨낸 바삭한 추로스를 진하고 따뜻한 초콜릿에 푹 찍어 먹는 완벽한 간식.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIPx0McY1_JyE6OvW2t3Df06MI_PM5p9gLi6PVEk5tLvtOiCP42Zoh8mE&s=10" }
+        ],
+        places: [
+            { name: "Royal Palace of Madrid (마드리드 왕궁)", desc: "유럽에서 가장 거대한 규모를 자랑하는 화려한 왕궁으로, 스페인 왕실의 위엄을 보여줍니다.", img: "https://res.cloudinary.com/ddjuftfy2/image/upload/f_webp,c_fill,q_auto/memphis/large/1320766863_WikiText-Royal%20Palace%20Madrid%201.jpg" },
+            { name: "Museo Nacional del Prado (프라도 미술관)", desc: "벨라스케스, 고야 등 스페인 황금기 예술가들의 걸작이 소장된 세계 최고의 미술관 중 하나입니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxa59Ll9q5ax3v-6gbL1PP7lwf3Yzy67EUWPtCQc_JBIsrIst5xUUdA2JM&s=10" },
+            { name: "Buen Retiro Park (레티로 공원)", desc: "아름다운 호수와 유리 궁전이 있는 마드리드 시민들의 거대한 도심 속 휴식처이자 세계문화유산입니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoqaQ9j9PvLLEO5oUbPtGqrlapXCAPFs68mRwTZAD-Ht7R7Zni_pxYOyc&s=10" }
+        ],
+        music: { title: "pavane pour une infante défunte", artist: "Maurice Ravel", cover: "https://image.yes24.com/goods/139777654/XL",videoId: "9JZDGpZ_R-o" },
+        pinPos: { top: "75%", left: "25%", zoom: 5 }
+    },
+    "Barcelona": {
+        meta: "🌊 Gaudí's Canvas | #Art #Sea",
+        img: "https://d3dqioy2sca31t.cloudfront.net/Projects/cms/production/000/020/484/article/d0531471711b367b94abfd4dbc29e6ae/spain-barcelona-sagrada-familia-080416-az.jpg",
+        food: [
+            { name: "Seafood Paella", desc: "신선한 지중해 해산물과 사프란의 향긋함이 쌀알에 깊게 배어든 스페인 대표 요리.", img: "https://themediterraneanchick.com/wp-content/uploads/2020/09/IMG_0825-1-scaled.jpg" },
+            { name: "Pan con Tomate", desc: "구운 빵에 생마늘과 완숙 토마토를 문질러 바르고 올리브 오일을 뿌려 먹는 카탈루냐 전통 타파스.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtzvwphUjoAr_Em4ACOkYEGyHZFbPuDsjYOnGrChjImO2-NuDQ2ygRF6sH&s=10" }
+        ],
+        places: [
+            { name: "Sagrada Família (사그라다 파밀리아 성당)", desc: "자연의 형상을 본뜬 천재 건축가 가우디 최후의 역작이자 여전히 지어지고 있는 경이로운 성당.", img: "https://i.namu.wiki/i/j67-iKR3Hx769TT9hdBzLHwM0z5Ng2C-irZQfJbcO-bCZWFgVc08JQpEQzPJLa-mBhOz7d0GphRz5vLjxl3PYA.webp" },
+            { name: "Park Güell (구엘 공원)", desc: "형형색색의 모자이크 타일과 동화 속 세상 같은 독특한 건축물들이 어우러진 가우디의 환상적인 정원 도시.", img: "https://d2mgzmtdeipcjp.cloudfront.net/files/good/2024/07/11/17206758822439.jpg" }
+        ],
+        music: { title: "Dtmf", artist: "Bad Bunny", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsv0Z_IGwLv8r8l0CmJHo7CkpHsblYxv4EXf4iGNfJVciwPvOJLxjnmsA&s=10", videoId: "PGe4PUAaFBY" },
+        pinPos: { top: "71%", left: "35%", zoom: 5 }
+    },
+    "Granada": {
+        meta: "🏰 Moorish Jewel | #Alhambra",
+        img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/bltcdc6b4b69c719f69/67c479d2c1fe9658b75503dd/iStock-182727232-Header_Mobile.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif",
+        food: [
+            { name: "Free Tapas", desc: "그라나다 특유의 문화로, 음료를 한 잔 주문할 때마다 훌륭한 퀄리티의 타파스가 무료로 제공됩니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJXJKioMDy-FeEXu2RsBbauxZQOoJ4gXDmVi7P5OMWvMvNGgDZSlC1U5n7&s=10" }
+        ],
+        places: [
+            { name: "Alhambra Palace (알함브라 궁전)", desc: "이슬람 건축 예술의 정수를 보여주는 궁전으로, 섬세한 아라베스크 문양과 고요한 정원이 일품입니다.", img: "https://cdn.craft.cloud/101e4579-0e19-46b6-95c6-7eb27e4afc41/assets/uploads/pois/Court-of-the-Lions-Alhambra-Granada-Spain.jpg" },
+            { name: "Albaicín (알바이신 지구)", desc: "미로 같은 하얀 골목길을 걸으며 알함브라 궁전의 극적인 노을을 감상할 수 있는 유서 깊은 무어인 언덕 마을.", img: "https://upload.wikimedia.org/wikipedia/commons/2/2f/El_Albayz%C3%ADn_panorama_%282010%29.jpg" }
+        ],
+        music: { title: "Piano Sonata in B Minor", artist: "Liszt", cover: "https://image.bugsm.co.kr/album/images/500/141372/14137244.jpg", videoId: "36SDx8bue08", startTime: 352 },
+        pinPos: { top: "87%", left: "23%", zoom: 5 }
+    },
+    "Málaga": {
+        meta: "☀️ Sunny Coast | #Picasso #Beach",
+        img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/blt16b676a440769603/683494d4cf42ff95e90467c7/BCC-2024-EXPLORER-MALAGA-HOW-TO-AVOID-CROWDS-HEADER_MOBILE.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif",
+        food: [
+            { name: "Tinto de Verano (레드 와인)", desc: "레드 와인에 레몬 탄산수를 섞어 시원하고 청량하게 마시는 안달루시아 지방의 대표 여름 와인 음료.", img: "https://www.tacama.com/wp-content/uploads/2026/03/Tinto-Verano-sabor-peruano-3-recetas-refrescantes.jpg" },
+            { name: "Churros con Chocolate (츄러스와 초콜릿)", desc: "바삭하게 튀겨낸 츄로스를 진하고 따뜻한 초콜릿 소스에 듬뿍 찍어 먹는 간식", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzNuFKDTL4f_QbKnD54JDGKoh_INNB_OokYGjtx2_-MkVceCYJ1j7WWF_c&s=10" }        
+        ],
+        places: [
+            { name: "Castillo de Gibralfaro (히브랄파로 성)", desc: "가파른 언덕 위에 자리 잡아 말라가 항구와 지중해 해안선, 투우장을 한눈에 내려다볼 수 있는 성채.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR90xhPhNraKYP_kP98RD-Oy0lSvIBo62L1CROWR_VW0imsU0VXJc3f0TnR&s=10" },
+            { name: "Museo Picasso Málaga (피카소 미술관)", desc: "말라가에서 태어난 천재 화가 거장 피카소의 고향집 근처에서 그의 초기작과 다양한 숨결을 만나는 공간.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZmgqHLxmtRgCiYzYR-xqVacNC1mShXHazkqXB30Nj-p1U-9SOFuRZ1D0&s=10" },
+            { name: "Calle Larios (라리오스 거리)", desc: "세련된 대리석 바닥과 화려한 조명 구조물, 트렌디한 숍들이 모여 있는 말라가 최고의 번화가 보행자 전용 도로.", img: "https://living4malaga.com/wp-content/uploads/2025/03/calle-larios-malaga-calle-mas-famosa-2.jpeg" },
+            { name: "Playa de la Malagueta (말라게타 해변)", desc: "도심과 바로 연결되어 언제든 지중해의 푸른 바다와 따스한 햇살을 만끽할 수 있는 활기찬 인공 해변.", img: "https://cf.bstatic.com/xdata/images/hotel/max1024x768/315899196.jpg?k=4a57732ed16541490710bc960ba1dfff35afdc174675e396808534b2f76ce567&o=" }
+        ],
+        music: { title: "Si Antes Te Hubiera Conocido", artist: "Karol G", cover: "https://i.scdn.co/image/ab67616d0000b273491678beaffcefac517a699e", videoId: "BApv3XwUsQk" },
+        pinPos: { top: "90%", left: "22%", zoom: 5 }
+    },
+"Mallorca": {
+    meta: "🌊 Island Paradise | #Beach #Mediterranean",
+    img: "https://cdn.sanity.io/images/nxpteyfv/goguides/8e4ff102049c7243dd0b1493ed3f890a8d5ba40c-1600x1067.jpg",
+    food: [
+        { name: "Paella de Sepia (먹물 빠에야)", desc: "오징어 먹물로 쌀을 검게 물들이고 해산물의 깊은 풍미를 더한 마요르카식 지중해 해산물 요리.", img: "https://media-cdn.tripadvisor.com/media/photo-s/0e/be/c9/cd/paella-de-sepia-en-su.jpg" },
+        { name: "Patatas Bravas (감자 튀김)", desc: "바삭하게 튀긴 감자 위에 매콤한 브라바 소스와 아이올리 소스를 곁들인 스페인 대표 타파스.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcST2XssAUbpGy7vL2mJi79lAdvXiltWx5WRCTevKUqJwQYyd3eRAbOI-fU&s=10" }
+    ],
+    places: [
+        { name: "Playa de S'Arenal (아레날 해변)", desc: "아름다운 백사장과 에메랄드빛 바다를 자랑하며 휴양과 해양 액티비티를 즐기기 좋은 마요르카 대표 해변.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQp9pjLBaqA3VnGb-O5Xdm21AIjoclDHRUcVak4zQwuOLM1pV6EBdCvD5s&s=10" },
+        { name: "Snorkeling en Mallorca (마요르카 스노클링)", desc: "투명한 지중해 바닷속에서 다채로운 해양 생물과 아름다운 산호 풍경을 감상할 수 있는 인기 체험.", img: "https://caribia.es/wp-content/uploads/2023/11/2-2.jpg" }
+    ],
+    music: { title: "QLONA", artist: "Karol G", cover: "https://i.scdn.co/image/ab67616d0000b2731010274037e8acef3ea96cad", videoId: "4X4uckVyk9o" },
+    pinPos: { top: "79%", left: "39%", zoom: 5 }
+},    "Paris": {
+        meta: "🗼 City of Light | #Romance",
+        img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/blt652fe43425222b58/676451b8ccead143f23f2e91/iStock-847408280-Header_Mobile.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif",
+        food: [
+            { name: "Steak Tartare", desc: "신선한 생소고기를 잘게 다져 계란 노른자, 허브, 각종 양념(다진 양파, 케이퍼, 머스터드 등)과 함께 버무려 먹는 프랑스식 전통 소고기 육회 요리", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0KamUtxoXQ8GkpvtLe0w0nIXJIh65yMj5cur5Yo5Q5_mM4tNYeRT4YOA&s=10" },
+           ],
+        places: [
+            { name: "Montmartre (몽마르트르)", desc: "프랑스 파리 북부에 위치한 언덕으로, 아름다운 사크레쾨르 대성당과 골목길이 자아내는 낭만적인 분위기 속에서 고흐, 피카소 등 수많은 예술가들의 흔적을 느낄 수 있는 대표적인 예술가 거리", img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/blted2fd26b0f7f6b89/682233917a31967c0d3e5b25/arnaud-mariat-49DEzojVZ0U-unsplash-HEADER-MOBILE.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif" },
+            { name: "Musée d'Orsay (오르세 미술관)", desc: "아름다운 기차역을 개조하여 모네, 고흐, 밀레 등 인상주의 거장들의 명작 회화를 가득 모아둔 미술관.", img: "https://asset-prod.france.fr/Paris_Tourist_Office_David_Lefranc_108311eb35.jpg" },
+            { name: "Palace of Versailles (베르사유 궁전)", desc: "태양왕 루이 14세의 절대 권력을 상징하는 화려함의 극치인 거대 거울의 방과 완벽한 대칭의 정원.", img: "https://www.agoda.com/wp-content/uploads/2019/03/Palace-of-Versailles_Paris_France_gardens.jpg" },
+            { name: "Disneyland Paris (디즈니랜드 파리)", desc: "잠자는 숲속의 공주 성을 중심으로 마법 같은 동화 속 세계를 체험할 수 있는 유럽 유일의 디즈니 파크.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlBOFoO1yAmBKuDYp0QsxbDp4j4h7Uflfijp_fzvUMrc9_gGQWWkIsr0A&s=10" }
+        ],
+        music: { title: "Le Festin", artist: "Camille, Michael Giacchino", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNHLoD4d0BP8qPicmf5IATvkZVnqN5V5xQB9jsFCW3xQ&s", videoId: "4X4uckVyk9o" },
+        pinPos: { top: "47%", left: "40%", zoom: 5 }
+    },
+    "Marseille": {
+        meta: "🌊 Maritime Port | #OldPort",
+        img: "https://cdn1.matadornetwork.com/blogs/1/2019/08/Notre-Dame-de-la-Garde-and-old-port-in-Marseille-France-1200x853.jpg",
+        food: [
+            { name: "Bouillabaisse", desc: "신선한 지중해산 생선과 갖은 해산물, 사프란, 허브를 넣고 푹 끓여낸 마르세유 전통 명물 생선 스튜 요리.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Escargots_au_beurre_persill%C3%A9.jpg/800px-Escargots_au_beurre_persill%C3%A9.jpg" }
+        ],
+        places: [
+            { name: "Basilique Notre-Dame de la Garde (노트르담 드 라 가르드 성당)", desc: "마르세유에서 가장 높은 언덕 위에 서서 항구와 도시 전체를 수호하는 황금빛 성모 마리아상이 있는 성당.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Notre-Dame_de_la_Garde_aerial_view_2020.jpeg/1280px-Notre-Dame_de_la_Garde_aerial_view_2020.jpeg" },
+            { name: "Marseille Cathedral (마르세유 대성당)", desc: "독특한 녹색과 백색 대리석 줄무늬가 돋보이는 웅장한 비잔틴-로마네스크 양식의 대규모 해안 성당.", img: "https://www.windsortour.co.kr/images/area_img/FR/MRS/FRMRS3200500_0003.jpg?CMD=resize&width=100%" }
+        ],
+        music: { title: "Daphnis et Chloé, Suite No. 2", artist: "Maurice Ravel", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSso6KkZ6gwzKLLczErer_-aYWhdWm3EeTUC_aXqxYuSG2gOOR5LEnb7lk&s=10", videoId: "WrYGA6GTVGI", startTime : 50 },
+        pinPos: { top: "65%", left: "45%", zoom: 5 }
+    },
+    "Nice": {
+        meta: "🏖️ French Riviera | #CoteDazur",
+        img: "https://gotripzi.com/_astro/nice-fr-hero.B5uoiVhG.webp",
+        food: [
+           { name: "Socca", desc: "병아리콩 가루 반죽을 넓게 펴서 화덕에 바삭하게 구워내 후추를 쳐서 먹는 니스의 길거리 소울푸드.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQrxX2K0jMd0RMEgo8S0MGMKpZe6u3lvoZBMHR2O6WNjYfbqlokPv7XCw&s=10" }
+        ],
+        places: [
+            { name: "Place Masséna (마세나 광장)", desc: "분홍빛 네오클래식 건물과 바둑판 모양 바닥, 독특한 현대 미술 조각상이 조화를 이루는 니스의 심장 같은 광장.", img: "https://images.trvl-media.com/place/6193618/686ebea2-88a0-48b5-a489-cfc4d8b99719.jpg" },
+            { name: "Cours Saleya Flower Market (살레야 꽃 시장)", desc: "형형색색의 신선한 꽃들과 남프랑스 특산품, 과일들이 가득하여 아침마다 활기로 넘쳐나는 전통 야외 시장.", img: "https://www.radiofrance.fr/pikapi/images/d750dfa1-d903-47ce-8342-c5576f736563/2048" },
+            { name: "Castle Hill (캐슬 힐 / 니스 전망대)", desc: "과거 성채가 있던 언덕으로, 니스의 탁 트인 에메랄드빛 천사들의 만 해변 곡선을 감상하기 위한 최고의 포인트.", img: "https://images.locationscout.net/2015/07/colline-du-chateau-france.webp?h=1400&q=80" }
+        ],
+        music: { title: "Clair de Lune", artist: "Claude Debussy", cover: "https://i.scdn.co/image/ab67616d00001e02f2c7155f97edfbc3c1d1af6d", videoId: "y0Iyws-M8pg" },
+        pinPos: { top: "64%", left: "49%", zoom: 5 }
+    },
+    "Rome": {
+        meta: "🏛️ Eternal City | #History #Gelato",
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Colosseum_in_Rome-April_2007-1-_copie_2B.jpg/1280px-Colosseum_in_Rome-April_2007-1-_copie_2B.jpg",
+        food: [
+            { name: "Authentic Carbonara", desc: "크림을 전혀 쓰지 않고 오직 계란 노른자, 페코리노 치즈, 관찰레로만 진득하게 맛을 낸 로마 정통 파스타.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIq4b0dr8noaw-EhouWOHviNLQ_pquPN6Cp-0jnjHRJAZL3SZIMSzuJas&s=10" },
+           { name: "Gelato (젤라또)", desc: "우유와 천연 재료로 만들어 일반 아이스크림보다 쫀득하고 진한 풍미가 특징인 이탈리아 전통 디저트.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIqRY_pZ3Ke0adpNHGqQBIhyMliT9UwQc3o0czgBv_bYc7p3AN-4BIb-s&s=10" }
+
+        ],
+        places: [
+            { name: "Colosseum (콜로세움)", desc: "고대 로마 제국의 거대한 원형 경기장으로 웅장한 건축술과 검투사들의 역사가 깃든 곳입니다.", img: "https://cdn.mos.cms.futurecdn.net/BiNbcY5fXy9Lra47jqHKGK-1920-80.jpg" },
+            { name: "Trevi Fountain (트레비 분수)", desc: "로마에서 가장 아름다운 바로크 양식의 분수. 어깨 너머로 동전을 던지며 다시 로마에 오기를 기원합니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrl0Yk82f-tHtw8w9SrBpKKB6SzuthZXKAtLfUCuuxvydBNo5A9SzQhpA&s=10" },
+            { name: "St. Peter's Basilica (바티칸 성 베드로 대성당)", desc: "가톨릭 세계의 중심이자 미켈란젤로의 피에타와 거대한 돔이 있는 전 세계에서 가장 성스럽고 거대한 성당.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/St_Peter%27s_Square%2C_Vatican_City_-_April_2007.jpg/960px-St_Peter%27s_Square%2C_Vatican_City_-_April_2007.jpg" },
+            { name: "Pantheon (판테온)", desc: "2천 년 전 지어졌음에도 완벽한 보존 상태를 자랑하는 신전으로, 기둥 없는 거대 돔과 오쿨루스 천창이 신비롭습니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuoJPZPvtwpOiAWnMFqt0JatWaz3E0B_nAGFVqWohdfg&s=10" }
+        ],
+        music: { title: "Concerto No. 2 in G minor, Op. 8, RV 315, 'L'estate' (Summer)", artist: "Antonio Vivaldi", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3hcK62plh-BOHaoG-17DdldgPDrx1WMvTIAljWuJ-HU1v_lG0UJ4HZ9Fy&s=10", videoId: "o2dnnqY8enA" },
+        pinPos: { top: "70%", left: "63%", zoom: 5 }
+    },
+    "Florence": {
+        meta: "🎨 Renaissance | #Duomo",
+        img: "https://www.thetimes.com/imageserver/image/3c5df246-b0d9-433c-bc4a-fb695d507180.jpg?strip=all&format=webp&crop=1600px%2C900px%2C0px%2C0px&resize=1328",
+        food: [
+            { name: "Vongole (봉골레)", desc: "신선한 바지락(조개)을 마늘과 올리브오일, 화이트와인으로 조리한 이탈리아 해산물 파스타.", img: "https://www.the-pasta-project.com/wp-content/uploads/linguine-alle-vongole-pasta-with-clams.jpg" },
+            { name: "Pizza Margherita (마르게리따 피자)", desc: "토마토, 모차렐라 치즈, 신선한 바질을 얹어 이탈리아 국기를 상징하는 가장 담백하고 클래식한 피자.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWJ40FFVEU0O_YdvfZITNkfHqqbQ0j4JSVf9iHTnb_iwxHnJCVPLFO11SK&s=10g" },
+	{ name: "Gelato (젤라또)", desc: "우유와 천연 재료로 만들어 일반 아이스크림보다 쫀득하고 진한 풍미가 특징인 이탈리아 전통 디저트.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIqRY_pZ3Ke0adpNHGqQBIhyMliT9UwQc3o0czgBv_bYc7p3AN-4BIb-s&s=10" }
+        ],
+        places: [
+            { name: "Cathedral of Santa Maria del Fiore (피렌체 두오모 성당)", desc: "붉은 타일의 거대한 돔인 브루넬레스키의 쿠폴라가 피렌체 스카이라인을 압도하는 예술적인 성당.", img: "https://d3b39vpyptsv01.cloudfront.net/photo/1/2/1a6f8931202d98d3ab14090c593a0ec6.jpg" },
+            { name: "Piazzale Michelangelo (미켈란젤로 광장)", desc: "언덕 위에 위치하여 붉은 지붕으로 가득 찬 피렌체 시가지와 아르노 강의 선셋, 야경을 한눈에 담는 명소.", img: "https://media.triple.guide/triple-cms/c_limit,f_auto,h_1024,w_1024/6b756fca-90a2-4c9c-8b3d-4841d9c44ebf.jpeg" },
+            { name: "Uffizi Gallery (우피치 미술관)", desc: "보티첼리의 '비너스의 탄생', 다빈치 등 르네상스 시대를 꽃피운 거장들의 최고의 회화 컬렉션을 소장한 미술관.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx1jHbiZncssN4hgibwF5I252kGsKCxYwAOJ23GOik0qH2sm7QsyJl3HWd&s=10" }
+        ],
+        music: { title: "Serenade from Schwanengesang, D. 957", artist: "Franz Peter Schubert", cover: "https://i.scdn.co/image/ab67616d0000b27375ff7997b6948398e0545c2c", videoId: "YG4E1X93ppo" },
+        pinPos: { top: "66%", left: "61%", zoom: 5 }
+    },
+    "London": {
+        meta: "🇬🇧 Royal Heritage | #BigBen",
+        img: "https://bucket-files.city-sightseeing.com/blog/2024/08/londonview.jpg",
+        food: [
+            { name: "Fish and Chips", desc: "두툼한 대구 살을 바삭하게 튀겨내 칩스와 함께 서빙되며, 소금과 몰트 식초를 곁들여 먹는 영국 대표 음식.", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Fish_and_chips_blackpool.jpg/1280px-Fish_and_chips_blackpool.jpg" },
+            { name: "Afternoon Tea Scone", desc: "갓 구운 스콘에 진한 클로티드 크림과 딸기 잼을 바르고 홍차를 함께 곁들이는 영국의 전통적인 오후 식문화.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWiJlzTBKyN9KmXdA1xw-3a2XINmnbO59seVT-JdK8DmLOSyvAjXwTbfY&s=10" }
+        ],
+        places: [
+            { name: "Big Ben & Parliament (빅벤과 국회의사당)", desc: "템스강변을 지키며 고딕 양식의 화려한 실루엣을 그리는 거대한 시계탑과 영국의 정치가 흐르는 의사당.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuSKkcwmJkly3J7gZ6lc4q933M84l1tIrXc7Vy-N6Bb2sknTm85UNL_KU&s=10" },
+            { name: "Tower Bridge (타워 브릿지)", desc: "하늘을 향해 두 개의 다리가 열리는 장관을 연출하는 빅토리아 고딕 양식의 독특하고 상징적인 도개교.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUyKTkAe4Bgo41lrLG9qzIfc1IVJ_Tu_eku1UovfoOzlgemWENk64GdCD2&s=10" },
+            { name: "Notting Hill (노팅힐)", desc: "파스텔톤의 예쁜 주택들이 늘어선 거리로, 매주 활기찬 포토벨로 마켓이 열려 구경하는 재미가 가득한 동네.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuKYiA-TauuO-hbi1TjnWrVal9-03oLj0IXELDEGLT4DemOXV711ISEsM&s=10" },
+            { name: "Kensington Gardens (켄싱턴 가든스)", desc: "켄싱턴 궁전 앞에 펼쳐진 왕실 정원으로, 넓은 잔디밭과 백조들이 노니는 호수가 아름다운 평화로운 공원.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTTId7U4mtV1KYcqEeKlVCYvGUK7AhVobJsaTnhHMj1pcjcpElR3IW4S8c&s=10" }
+        ],
+        music: { title: "Baby", artist: "Justin Bieber", cover: "https://upload.wikimedia.org/wikipedia/en/d/d1/Babycoverart.jpg", videoId: "u43T38Vu9tg" },
+        pinPos: { top: "33%", left: "31%", zoom: 5 }
+    },
+    "Berlin": {
+        meta: "🐻 Urban Grit | #History #Techno",
+        img: "https://a.storyblok.com/f/239725/2998x1686/7f1f93b4b4/01_de_ber_hero_berlincityscape.png/m/3840x2160/filters:quality(70)",
+        food: [
+            { name: "Currywurst", desc: "구운 소시지를 썰어 카레 가루가 섞인 매콤달콤한 특제 케첩 소스를 듬뿍 얹어 먹는 베를린의 대표 길거리 음식.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTA_ZusCo7_nQ78Q2_KW7JiVw6LLp4m9Xd6-QWNsu2rr-UcC4NJnSWHnL2M&s=10" }
+        ],
+        places: [
+            { name: "Brandenburg Gate (브란덴부르크 문)", desc: "과거 분단의 장벽이었으나 현재는 독일의 통일과 유럽의 평화를 상징하는 역사적인 신고전주의 양식 건축물.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9nEjCpsoASjC0TMOwdIikz7QUxXUqwJFzj8KnFjiSJVzu86qYvqTEM-9A&s=10" },
+            { name: "Berlin Cathedral (베를린 대성당)", desc: "박물관 섬에 위치한 거대한 푸른빛 돔이 인상적인 성당으로, 화려한 파이프오르간과 베를린 전경이 보이는 탑이 유명합니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRv0YM5YSM4lNxO9R-XRSjZMDJs824lruzuub_no3eoQQ&s=10" },
+            { name: "Berliner Philharmonie (베를린 필하모니)", desc: "세계 최고 오케스트라의 본거지로, 무대를 관객석이 포도밭처럼 둥글게 둘러싸고 있는 독특한 텐트형 콘서트홀.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTio9V9yVaW678VFn6clIrXhEnoTpsC7SAN1luPf5CHyKKeYJD5MhwXtRM&s=10" },
+            { name: "Charlottenburg Palace (샤를로텐부르크 궁전)", desc: "베를린에 남아있는 가장 거대하고 화려한 프로이센 왕가의 궁전으로, 바로크 스타일의 드넓은 정원이 아름답습니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT1vKqk5hRu1gTYvcU7yyH8vowOsbfuVpSHPwFA7KjIjIwKeOnbAPZYSM43&s=10" }
+        ],
+        music: { title: "Piano Concerto No.5", artist: "Beethoven", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSu1FdhFVEq6MulowMP3GEFA8UyLs58IsdFDwy41P3wkd1t_F01qJP6HEZN&s=10" , videoId: "qP9gE8Enxfo"},
+        pinPos: { top: "32%", left: "63%", zoom: 5 }
+    },
+    "Leipzig": {
+        meta: "🎼 City of Music | #Bach",
+        img: "https://img.destination.one/remote/.webp?url=https%3A%2F%2Fdam.destination.one%2F923155%2Fdf1734ab013e2104d07cd9893e5f090fa8ba7d4c251a80f4b9ad27e17bf996e4%2Fbundesverwaltungsgericht-und-bibliotheca-albertina-sehensw-rdigkeiten-in-leipzig.jpg&scale=both&mode=crop&quality=90&width=1424&height=612&focuspoint=0.07,0.26",
+        food: [
+        { name: "Currywurst (커리 부어스트)", desc: "구운 소시지를 썰어 카레 가루가 섞인 매콤달콤한 특제 케첩 소스를 듬뿍 얹어 먹는 베를린의 대표 길거리 음식.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTA_ZusCo7_nQ78Q2_KW7JiVw6LLp4m9Xd6-QWNsu2rr-UcC4NJnSWHnL2M&s=10" },
+            { name: "Jägerschnitzel (예거 슈니첼)", desc: "바삭하게 튀긴 슈니첼에 버섯 크림소스를 곁들인 독일식 돈가스 요리.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdgy-sY1nuXC2-fUc51FZo3ns3arHQQxslnOwHupM0pMHQmWYFit3uQorc&s=10" }
+        ],
+        places: [
+            { name: "Marktplatz & Old City Hall (마르크트 광장과 구 시청사)", desc: "도시의 중심이자 아름다운 르네상스 양식의 구 시청 건물이 서 있는 곳으로, 정기적으로 다양한 마켓이 열립니다.", img: "https://cdn.tripzaza.com/ko/destinations/wp-content/uploads/2018/07/1-Old_City_Hall-e1549076329274.jpg" },
+            { name: "St. Thomas Church (성 토마스 교회)", desc: "음악의 아버지 요한 제바스티안 바흐가 27년간 합창단 감독으로 음악 활동을 펼쳤으며 그의 유해가 안치된 유서 깊은 교회.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTAG_U0ZKASWtgPhjh50wDQ6Mp9ucRn81rShJjumYpW08mGyj05lRluSMA&s=10" },
+            { name: "Mendelssohn House (멘델스존 하우스)", desc: "작곡가 펠릭스 멘델스존이 생애 마지막 시기를 보내며 숨을 거둔 곳으로, 그의 유품과 음악적 업적을 기리는 세계 유일의 박물관.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwGoLnLtL_gJR5sQ3DbbBlQ_rtJZNGRY-BTxUnbKa-SygKR-BBvWd8kYIR&s=10" }
+        ],
+        music: { title: "Symphony No.5 ", artist: "Mendelssoh", cover: "https://images.universal-music.de/img/assets/116/116076/1/2048/mendelssohn-5-symphonies-7-overtures-0028947146728.jpg", videoId: "otcrnrQAwD8", startTime : 1514 },
+        pinPos: { top: "35%", left: "61%", zoom: 5 }
+    },
+    "Vienna": {
+        meta: "🇦🇹 Imperial Elegance | #Classic",
+        img: "https://www.planet-wissen.de/kultur/metropolen/wien/introwientramgjpg100~_v-gseagaleriexl.jpg",
+        food: [
+            { name: "Hot Dog", desc: "따뜻한 빵 속에 소시지와 소스를 넣어 즐기는 오스트리아의 대표 길거리 음식.", img: "https://s3-media0.fl.yelpcdn.com/bphoto/zj1NZqE6bj5G1WJySGh97g/1000s.jpg" }
+        ],
+        places: [
+            { name: "Vienna State Opera (빈 국립 오페라 극장)", desc: "파리, 밀라노와 함께 유럽 3대 오페라 극장으로 꼽히며 매일 밤 세계 최고 수준의 명품 클래식 및 오페라 공연이 열리는 곳.", img: "https://cdn.jnilbo.com/news/photo/201902/58746921005_3_5724.jpg" },
+            { name: "St. Stephen's Cathedral (슈테판 대성당)", desc: "빈의 상징이자 혼이 담긴 고딕 양식의 대성당으로, 모자이크 패턴의 화려한 지붕 타일과 높은 첨탑이 장관을 이룹니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-1wYC8ixheK52QXV7FOlANOZ59oMfQV0pq49ibUZ8L-9kuQBVv22ToFw&s=10" },
+            { name: "Belvedere Palace (벨베데레 궁전)", desc: "아름다운 바로크 양식의 궁전으로, 현재는 미술관으로 쓰이며 구스타프 클림트의 세계적인 명작 '키스'를 소장하고 있습니다.", img: "https://i.namu.wiki/i/i6A_4Sf8U_ys-UQISR_JugRlO7XYk-Q6nsO5XOUC7VbS39yurB2Gy8VTL_TT1HdvjrONkltzkyxpeykxV6aMmg.webp" },
+            { name: "Beethoven Houses (베토벤 하우스)", desc: "베토벤이 머물며 작품을 남긴 공간을 보존한 박물관으로, 그의 삶과 음악을 만나볼 수 있는 기념관.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtbTXaeKmDqLqo_u3Z--AFNGioIStOnxFfuR8tg3imF6bA1EzNV1ktIV7t&s=10" }
+        ],
+        music: { title: "Divertimento No.15 in B-flat major", artist: "W.A. Mozart", cover: "https://uk.rarevinyl.com/cdn/shop/files/wolfgang-amadeus-mozart-mozart-divertimento-no-15-in-b-flat-major-k-287-uk-vinyl-lp-album-record-lxt5112-862259_1024x1024.jpg?v=1744473845", videoId: "qBbz57bK7TM"},
+        pinPos: { top: "48%", left: "70%", zoom: 5 }
+    },
+    "Salzburg": {
+        meta: "🎵 Melody of Alps | #Mozart",
+        img: "https://media.triple.guide/triple-cms/c_limit,f_auto,h_1024,w_1024/a5fff237-f398-4fc3-b649-166263b430dc.jpeg",
+        food: [
+            { name: "Salzburg salt (잘츠부르크 소금)", desc: "잘츠부르크 지역의 소금 광산에서 생산된 소금으로, ‘소금의 성’이라는 도시 이름의 유래가 된 지역 특산품.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIzCD7HOZXxNpeihcWsRSMDnHyxRRAQbrkpgeJsS5msueebxfclosLqvw&s=10" }
+        ],
+        places: [
+            { name: "Mirabell Gardens (미라벨 정원)", desc: "영화 '사운드 오브 뮤직'에서 여주인공과 아이들이 도레미 송을 부르던 기하학적으로 배치된 분수와 꽃이 예쁜 바로크 정원.", img: "https://media.triple.guide/triple-cms/c_limit,f_auto,h_1024,w_1024/5fcde81b-0657-4bdc-b438-131b71129f31.jpeg" },
+            { name: "Hohensalzburg Fortress (호엔잘츠부르크 성)", desc: "중세 유럽 성채 중 파괴되지 않고 완전히 보존된 가장 큰 성으로, 도시와 알프스 산맥을 굽어보는 압도적 요새.", img: "https://pimg.mk.co.kr/meet/neds/2021/06/image_readtop_2021_543424_16228728054669814.jpg" },
+            { name: "Mozart's Birthplace (모차르트 생가)", desc: "천재 음악가 볼프강 아마데우스 모차르트가 태어나 17세까지 살았던 노란색 건물로, 그가 쓰던 악기와 친필 악보가 가득합니다.", img: "https://media.triple.guide/triple-cms/c_limit,f_auto,h_1024,w_1024/f7627f24-a873-44e7-a592-af24d6ec6ca5.jpeg" }
+        ],
+        music: { title: "Piano Sonata No.12 in F Major : ll.Adagio", artist: "W.A. Mozart", cover: "https://image.yes24.com/goods/65571940/XL", videoId: "r5bNC4m4MpM" },
+        pinPos: { top: "49%", left: "65%", zoom: 5 }
+    },
+    "Budapest": {
+        meta: "👑 Pearl of Danube | #NightView",
+        img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/blt73e4f5e03cc6a46a/688d3662558a1b8b50f6f1d0/BCC-2025-EXPLORER-BUDAPEST-IN-NOVEMBER-HEADER_MOBILE.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif",
+        food: [
+            { name: "Kürtőskalács (퀴르퇴시칼라치, 굴뚝빵)", desc: "반죽을 원통형 틀에 말아 구운 뒤 설탕과 시나몬 등을 입힌 헝가리 전통 디저트.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToJa25WY3XB3COPCWPkIcf-UBsKJHniOhyEE5wJPjCQ5MbX-JA-6a5UR9W&s=10" }
+        ],
+        places: [
+            { name: "Fisherman's Bastion (어부의 요새)", desc: "신고딕 양식의 백색 테라스와 고깔 모양 탑들이 모여 동화 같은 성벽을 이루며, 국회의사당의 찬란한 야경을 감상하는 최고의 요충지.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTk29YjacDWm5b7zMFNOe6zpbWZS2jrKobkn74_TvFIjXNQ9Fwld-U11QU&s=10" },
+            { name: "Széchenyi Chain Bridge (세체니 다리)", desc: "부다 지역과 페스트 지역을 최초로 연결한 도나우 강의 상징적인 석조 현수교로, 입구를 지키는 네 마리의 사자 조각상이 유명합니다.", img: "https://www.windsortour.co.kr/images/area_img/HU/BUD/HUBUD3200390_0003.jpg?CMD=resize&width=100%" },
+            { name: "Vajdahunyad Castle (버이더후녀드 성)", desc: "시민공원 호숫가에 위치한 고풍스러운 성으로, 로마네스크, 고딕, 바로크 등 헝가리의 다채로운 역사적 건축 양식을 복합적으로 재현한 공간.", img: "https://mblogthumb-phinf.pstatic.net/MjAyNDAxMTVfMjI3/MDAxNzA1MzA0MjgxNTg2.Eueq4gjTSYSpSX5fkIqF8IXoyXb81aU5gWds6A3eLgQg.C0rgVusxxuYmNxbWuVwZGrcyVMTc2pq7n7_rprQzKE0g.JPEG.dong5200/%EB%B2%84%EC%9D%B4%EB%8D%94%ED%9B%84%EB%85%80%EB%93%9C%EC%84%B1_%EC%95%BC%EA%B2%BD102.jpg?type=w800" },
+	{ name: "Liszt Ház Budapest (리스트 하우스)", desc: "Liszt Ferenc Memorial Museum으로, 작곡가 프란츠 리스트가 살았던 집을 보존한 기념관이자 박물관.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZE8r6JI2ZAqjWcqxfKTvCPsnBCHS59y4ZY29QOEnU6aLN9bNfyleehQPZ&s=10" }
+        ],
+        music: { title: "Hungarian Rhapsody No. 2", artist: "Franz Liszt", cover: "https://i.scdn.co/image/ab67616d0000b273d8c4a7610423ea9afa0f809f", videoId: "LdH1hSWGFGU", startTime : 342 },
+        pinPos: { top: "51%", left: "78%", zoom: 5 }
+    },
+    "Warsaw": {
+        meta: "🇵🇱 Phoenix City | #Chopin",
+        img: "https://images.contentstack.io/v3/assets/blt06f605a34f1194ff/bltdd818cc05eb26425/681014f13b56c2df6b174a1a/iStock-2200408050-Header_Mobile.jpg?fit=crop&auto=webp&quality=60&crop=smart&format=avif",
+        food: [
+
+        ],
+        places: [
+            { name: "Warsaw Old Town (바르샤바 구시가지)", desc: "제2차 세계대전으로 완전히 파괴되었으나 옛 그림과 기록을 토대로 시민들이 벽돌 한 장까지 완벽 복원해 낸 눈물겨운 역사적 유네스코 문화유산 광장.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSovtPUS5du1pbisIMCX-GYtS9L83ryj4Qp8_RzG9Ck0fJVqtw7aRn_g-0&s=10" },
+            { name: "Łazienki Park (와지엔키 공원)", desc: "왕실의 여름 궁전이었던 물 위의 궁전과 넓은 숲이 조화를 이루며, 여름철 주말마다 커다란 쇼팽 동상 아래서 무료 피아노 콘서트가 열리는 쉼터.", img: "https://www.windsortour.co.kr/images/area_img/PL/WAW/PLWAW3200335_0001.jpg?CMD=resize&width=100%" },
+            { name: "Birthplace of Frédéric Chopin (프레데리크 쇼팽 생가)", desc: "바르샤바 근교 젤라조바 볼라에 위치한 피아노의 시인 쇼팽이 태어난 생가로, 푸르른 대정원과 함께 그의 어린 시절 기록이 소담하게 남아있습니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFkP8O35eLtZBn5ApDO-yXOLHnJyGf92to0N3uCNLHBg&s=10" }
+        ],
+        music: { title: "Mazurka, Op. 24: No.4 in B-Flat Minor, Moderato", artist: "Frédéric Chopin", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZQYaMehFPBbF39NqnQrfnKqb-XQuHNLxrUvlZ3pP4hGGnYCdnx5RUOxdi&s=10", videoId: "taSBPw9DClc" },
+        pinPos: { top: "32%", left: "83%", zoom: 5 }
+    },
+    "Lisbon": {
+        meta: "💛 Yellow Tram | #Nostalgia",
+        img: "https://www.farejaviagens.com.br/wp-content/uploads/2024/11/Castelo-de-Sa%CC%83o-Jorge-Lisboa-Portugal-scaled.jpeg",
+        food: [
+            { name: "Pastel de Nata", desc: "포르투갈 제로니무스 수도원에서 시작된 원조 에그타르트. 페이스트리의 파삭한 식감과 촉촉하고 달콤한 커스터드 크림이 예술입니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT914IGqZRXz0oAMiYj_Nx4TssP5KUrVrvLkQvgBInWv8NgfCc-S3i-pZDn&s=10" },
+	{ name: "Bifana", desc: "얇게 썬 돼지고기를 마늘과 향신료로 양념해 바게트에 넣은 포르투갈식 샌드위치.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcROmKrvB4-qKABGVOwbKkn12HHmJHmCgA7Bp3eg4klq-yJ39PnLqGdGgRn2&s=10" }
+
+        ],
+        places: [
+            { name: "Miradouro da Graça (그라사 전망대)", desc: "리스본의 올드타운 오렌지빛 지붕들과 대서양으로 흘러가는 넓은 테주 강, 그리고 4월 25일 다리의 황홀한 석양을 한눈에 감상하기 좋은 전망대.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR1getG9QqL68kbr9QY1eV4krOQh8cizNTuEUHnGQVWkWEibkLt69V2N8RB&s=10" },
+            { name: "São Jorge Castle (상 조르주 성)", desc: "리스본에서 가장 높은 언덕에 요새처럼 솟아오른 고성으로, 성벽 위를 거닐며 넓게 펼쳐진 탁 트인 리스본 전경을 360도로 감상할 수 있습니다.", img: "https://www.civitatis.com/f/portugal/lisboa/guia/castillo-san-jorge-m.jpg" },
+            { name: "Alfama District (알파마 지구)", desc: "리스본 대지진 속에서도 살아남은 가장 오래된 골목 동네로, 구불구불한 계단과 노란 28번 트램, 애잔한 파두 음악 소리가 흐르는 감성 가득한 장소.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTr4NtIZUjH8edxjYO4se55I2T8Txlg0fq7QMDmeNrC1yKKuD1i_AnhQzw4&s=10" }
+        ],
+        music: { title: "Sonata No.3 in F minor, Op.5", artist: "Brahms", cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRORzxA8YQiPeaLuSZi_GZkt8vmLcWgvJOrAXBEfSkpp6k3B016sj-VdaY&s=10", videoId: "XGLZm3tj2Co", startTime : 1465 },
+        pinPos: { top: "83%", left: "12%", zoom: 5 } // 포르투갈 서단 조정을 위해 zoom 최적화
+    },
+    "Porto": {
+        meta: "🍷 Sweet River | #PortWine",
+        img: "https://static.independent.co.uk/s3fs-public/thumbnails/image/2017/06/26/18/porto-main.jpg",
+        food: [
+            { name: "Pastel de Nata", desc: "포르투갈 제로니무스 수도원에서 시작된 원조 에그타르트. 페이스트리의 파삭한 식감과 촉촉하고 달콤한 커스터드 크림이 예술입니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWqg2zxtvf1zyafBAD0W8lDAJq6TZW8AebNamHwzyIXOhZWUDyIcu5lZo&s=10" }
+        ],
+        places: [
+            { name: "Dom Luís I Bridge (동 루이스 1세 다리)", desc: "에펠의 제자가 설계한 도루 강을 가로지르는 아름다운 복층 철교로, 2층의 보행자 전용 길을 걸으며 감상하는 포르투 히베이라의 야경이 최고로 꼽힙니다.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRB-0SAJm-6Q4puD2pydrh43PU4bNkJ4uQpUPFjKDeQNA&s=10" },
+            { name: "Sandeman Porto Wine Cellars (샌드맨 포트 와인 와이너리)", desc: "도루 강 건너 빌라 노바 드 가이아 지구에 위치한 전통 와인 저장고로, 포르투갈 특유의 달콤하고 도수 높은 포트 와인의 숙성 과정을 투어하고 시음하는 공간.", img: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2a/24/ca/94/caption.jpg?w=1200&h=-1&s=1" },
+{ name: "Miradouro da Serra do Pilar (세하 두 필라르 전망대)", desc: "도루강과 루이스 1세 다리, 포르투 시내를 한눈에 담을 수 있는 대표 전망 명소.", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSNvHleD0ZKD-kbLIferUeiLFqzvXiEiP5pdz4BZMJ5oLO13aCuRWsm8t-M&s=10" },
+
+            { name: "Mercado do Bolhão (볼량 시장)", desc: "포르투 시민들의 삶의 애환과 활기를 고스란히 느낄 수 있는 유서 깊은 전통 재래시장으로, 신선한 과일, 치즈, 해산물 및 가벼운 로컬 음식을 팝니다.", img: "https://static1.squarespace.com/static/5e42c80e1f17803e3c038127/5e529d9dcd15995a4e9dd432/6407471606d417302ced9c0b/1715558505810/unsplash-image-PwakjFS1kv8.jpg?format=1500w" }
+        ],
+        music: { title: "Otro Atardecer", artist: "Bad Bunny", cover: "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/3e/04/eb/3e04ebf6-370f-f59d-ec84-2c2643db92f1/196626945068.jpg/1400x1400bb.jpg", videoId: "i1t3wCxaOlU" },
+        pinPos: { top: "75%", left: "13%", zoom: 5 }
+    }
+};
+        
+let currentActiveCountry = "";
+        let currentVideoId = "";
+        let currentStartTime = 0; // 🔥 [보완] 시작 시간을 제어할 전역 변수 초기화
+
+        // 패널 열기 및 초기화
+        function openCountryPanel(countryKey, element) { // 🌟 element 매개변수 추가
+            if (currentActiveCountry === countryKey && document.getElementById('sidePanel').classList.contains('open')) {
+                closePanel();
+                return;
+            }
+
+            currentActiveCountry = countryKey;
+            const group = countryGroups[countryKey];
+            
+            document.getElementById('panelCountryHeader').innerText = group.countryName;
+
+            const selector = document.getElementById('citySelector');
+            selector.innerHTML = group.cities.map((city, idx) => `
+                <button onclick="switchCity('${city}')" class="city-chip px-5 py-2 rounded-full text-sm font-bold tracking-wide ${idx===0?'active':''} text-stone-600 bg-white shadow-sm hover:bg-stone-50">
+                    ${city}
+                </button>
+            `).join('');
+
+            switchCity(group.cities[0]);
+
+            // 레이아웃 이동 애니메이션
+            document.getElementById('mapContainer').classList.add('shifted');
+            document.getElementById('sidePanel').classList.add('open');
+
+            // 🌟 [추가] 모든 핀에서 active 클래스를 제거하고, 현재 클릭된 핀에만 active 추가
+            document.querySelectorAll('.country-pin').forEach(pin => pin.classList.remove('active'));
+            if (element) {
+                element.classList.add('active');
+            }
+        }
+
+        // 특정 도시 선택 시 데이터 렌더링
+        function switchCity(cityName) {
+            // 버튼 상태 업데이트
+            document.querySelectorAll('.city-chip').forEach(btn => {
+                if(btn.innerText.trim() === cityName) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            const data = cityData[cityName];
+            if (!data) return;
+
+            // 메인 비주얼 업데이트
+            document.getElementById('panelCity').innerText = cityName;
+            document.getElementById('panelMeta').innerText = data.meta;
+            document.getElementById('panelImg').src = data.img;
+
+            // 미니맵
+            const miniMapBase = document.getElementById('miniMapBase');
+            const pin = document.getElementById('miniMapPin');
+
+            if (data.pinPos) {
+                const leftPercent = parseFloat(data.pinPos.left);
+                const topPercent = parseFloat(data.pinPos.top);
+                const zoomLevel = data.pinPos.zoom || 3;
+
+                miniMapBase.style.transformOrigin = `${leftPercent}% ${topPercent}%`;
+                const moveX = 50 - leftPercent;
+                const moveY = 50 - topPercent;
+                
+                miniMapBase.style.transform = `translate(${moveX}%, ${moveY}%) scale(${zoomLevel})`;
+                pin.style.display = 'block';
+            } else {
+                miniMapBase.style.transformOrigin = "50% 50%";
+                miniMapBase.style.transform = "translate(0px, 0px) scale(1)";
+                pin.style.display = 'none';
+            }
+
+            // 🍕 음식 리스트 카드 렌더링
+            document.getElementById('food').innerHTML = data.food.map(f => `
+                <div class="flex flex-col bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden group">
+                    <div class="h-48 md:h-56 overflow-hidden relative">
+                        <img src="${f.img}" alt="${f.name}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </div>
+                    <div class="p-5 md:p-6">
+                        <h4 class="text-xl md:text-2xl font-bold text-stone-800 mb-2 font-serif">${f.name}</h4>
+                        <p class="text-sm text-stone-600 leading-relaxed">${f.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            // 🏛️ 장소 리스트 카드 렌더링
+            document.getElementById('place').innerHTML = data.places.map(p => `
+                <div class="flex flex-col bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden group">
+                    <div class="h-48 md:h-56 overflow-hidden relative">
+                        <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                    </div>
+                    <div class="p-5 md:p-6">
+                        <h4 class="text-xl md:text-2xl font-bold text-stone-800 mb-2 font-serif"><span class="text-amber-600 mr-1.5 text-lg">✦</span>${p.name}</h4>
+                        <p class="text-sm text-stone-600 leading-relaxed">${p.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            
+            // 🎵 음악 데이터 준비 및 뷰 리셋
+            currentVideoId = data.music.videoId;
+            
+            // 💡 [수정] 데이터에 startTime이 없거나 0일 경우 자동으로 처음부터 시작되도록 안전장치 마련
+            currentStartTime = (data.music.startTime && data.music.startTime > 0) ? data.music.startTime : 0; 
+
+            document.getElementById('musicTitle').innerText = data.music.title;
+            document.getElementById('musicArtist').innerText = data.music.artist;
+
+            // 음악 플레이어 컨테이너 초기화 (커버 이미지 렌더링)
+            const playerContainer = document.getElementById('musicPlayerContainer');
+            playerContainer.innerHTML = `
+                <img src="${data.music.cover}" alt="Album Cover" class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700">
+                <div class="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300 z-10"></div>
+                <button onclick="playMusic(event)" class="relative z-20 w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:scale-110 transition-transform duration-300">
+                    <svg class="w-8 h-8 text-white ml-1.5 drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            `;
+
+            resetTabs();
+        }
+
+        // 유튜브 제공 소스코드를 완벽 이식하여 오류를 차단한 재생 함수
+        function playMusic(event) {
+            if (event) event.stopPropagation(); // 핀 클릭 꼬임 방지
+            
+            if (!currentVideoId) return;
+            
+            const container = document.getElementById('musicPlayerContainer');
+            
+            // 💡 &start=${currentStartTime} 규칙이 0 혹은 지정 초 단위로 정상 대입됩니다.
+            container.innerHTML = `
+                <iframe 
+                    class="absolute inset-0 w-full h-full z-30" 
+                    src="https://www.youtube.com/embed/${currentVideoId}?autoplay=1&start=${currentStartTime}" 
+                    title="YouTube video player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    referrerpolicy="strict-origin-when-cross-origin" 
+                    allowfullscreen>
+                </iframe>
+            `;
+        }
+
+        // 패널 닫기
+        function closePanel() {
+            document.getElementById('mapContainer').classList.remove('shifted');
+            document.getElementById('sidePanel').classList.remove('open');
+            if(document.querySelector('#musicPlayerContainer iframe')) {
+                 document.getElementById('musicPlayerContainer').innerHTML = ''; 
+            }
+
+            // 🌟 [추가] 패널이 닫힐 때 지도 위 모든 핀의 활성화 호버 효과 제거
+            document.querySelectorAll('.country-pin').forEach(pin => pin.classList.remove('active'));
+
+            // 🌟 [추가] 활성화된 국가 정보도 초기화
+            currentActiveCountry = null;
+        }
+
+        // 탭 수동 전환
+        function showTab(event, tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if(event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+        }
+
+        // 🌟 수정 완료: 도시 변경 시 초기화 로직을 'place' 기준으로 정렬
+        function resetTabs() {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById('place').classList.add('active');
+            document.querySelector("nav button").classList.add('active');
+            
+            // 탭 변경 시 패널 콘텐츠 상단으로 스크롤
+            document.getElementById('panelContent').scrollTop = 0;
+        }
+    </script>
+</body>
+</html>
